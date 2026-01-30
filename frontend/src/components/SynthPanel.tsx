@@ -1,14 +1,20 @@
 // Main synth control panel
 
+import { useState } from 'react';
 import { useSynthSettings } from '../hooks/useApi';
 import { ConnectionStatus } from './ConnectionStatus';
 import { SlotSelector } from './SlotSelector';
 import { VariationSelector } from './VariationSelector';
 import { PatchUpload } from './PatchUpload';
+import { SlotView } from './SlotView';
+import { Keyboard } from './Keyboard';
+import { BankSelector } from './BankSelector';
 import type { SlotLetter } from '../types/api';
 
 export function SynthPanel() {
   const { data: settings, isLoading, isError } = useSynthSettings();
+  const [viewSlot, setViewSlot] = useState<SlotLetter | null>(null);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -23,9 +29,19 @@ export function SynthPanel() {
               </span>
             )}
           </div>
-          <ConnectionStatus />
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setKeyboardOpen(true)}
+              className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded text-sm font-medium transition-colors"
+            >
+              Keyboard
+            </button>
+            <ConnectionStatus />
+          </div>
         </div>
       </header>
+
+      <Keyboard isOpen={keyboardOpen} onClose={() => setKeyboardOpen(false)} />
 
       {/* Main content */}
       <main className="max-w-4xl mx-auto p-6 space-y-8">
@@ -67,8 +83,37 @@ export function SynthPanel() {
               </div>
             </div>
 
+            {/* Bank selector */}
+            <BankSelector />
+
             {/* Slot selector */}
             <SlotSelector slots={settings.slots} activeSlot={settings.focus} />
+
+            {/* Slot view tabs */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <h2 className="text-lg font-semibold text-gray-300">Patch View</h2>
+                <div className="flex gap-2">
+                  {(['A', 'B', 'C', 'D'] as SlotLetter[]).map((slot) => (
+                    <button
+                      key={slot}
+                      onClick={() => setViewSlot(viewSlot === slot ? null : slot)}
+                      className={`
+                        px-3 py-1 rounded text-sm font-medium transition-colors
+                        ${viewSlot === slot
+                          ? 'bg-nord-blue text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        }
+                      `}
+                    >
+                      {slot}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {viewSlot && <SlotView slot={viewSlot} />}
+            </div>
 
             {/* Variation selector */}
             <VariationSelector />

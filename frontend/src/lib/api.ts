@@ -1,6 +1,6 @@
 // API Client for G2 Synthesizer
 
-import type { SynthStatus, SynthSettings, ApiResponse, SlotLetter, Variation } from '../types/api';
+import type { SynthStatus, SynthSettings, ApiResponse, SlotLetter, Variation, Patch, BankDef } from '../types/api';
 
 const API_BASE = 'api';
 
@@ -50,6 +50,41 @@ export async function setVariation(variation: Variation): Promise<ApiResponse> {
   });
   if (!response.ok) {
     throw new Error(`Failed to set variation: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function getSlotInfo(slot: SlotLetter): Promise<Patch> {
+  const response = await fetch(`${API_BASE}/slot/${slot}`);
+  if (!response.ok) {
+    throw new Error(`Failed to get slot info: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function playNote(midiNote: number, velocity: number): Promise<void> {
+  const response = await fetch(`${API_BASE}/playnote/${midiNote}/${velocity}`, {
+    method: 'POST',
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to play note: ${response.statusText}`);
+  }
+}
+
+export async function getBank(): Promise<BankDef[]> {
+  const response = await fetch(`${API_BASE}/bank`);
+  if (!response.ok) {
+    throw new Error(`Failed to get bank: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function selectBankItem(type: string, bank: number, patch: number): Promise<ApiResponse> {
+  const response = await fetch(`${API_BASE}/bank/${type}/${bank}/${patch}`, {
+    method: 'POST',
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to select bank item: ${response.statusText}`);
   }
   return response.json();
 }

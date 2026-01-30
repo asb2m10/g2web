@@ -805,8 +805,7 @@ export function getDisplayValue(param: ParamDef, value: number, definitionIndex 
   const map = param.map[definitionIndex];
   if (!map) return undefined;
 
-  // Find exact match or closest lower value
-  const keys = Object.values(map);
+  // Find exact match
   for (const [displayName, val] of Object.entries(map)) {
     if (parseInt(val) === value) {
       return displayName;

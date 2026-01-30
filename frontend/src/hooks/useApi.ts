@@ -7,6 +7,7 @@ import {
   selectSlot,
   loadPatch,
   setVariation,
+  getSlotInfo,
 } from '../lib/api';
 import type { SlotLetter, Variation } from '../types/api';
 
@@ -14,6 +15,7 @@ import type { SlotLetter, Variation } from '../types/api';
 export const queryKeys = {
   status: ['api', 'status'] as const,
   settings: ['api', 'settings'] as const,
+  slot: (slot: SlotLetter) => ['api', 'slot', slot] as const,
 };
 
 // Status query with polling
@@ -69,5 +71,15 @@ export function useSetVariation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.settings });
     },
+  });
+}
+
+// Slot info query
+export function useSlotInfo(slot: SlotLetter | null) {
+  return useQuery({
+    queryKey: queryKeys.slot(slot!),
+    queryFn: () => getSlotInfo(slot!),
+    enabled: !!slot,
+    retry: false,
   });
 }

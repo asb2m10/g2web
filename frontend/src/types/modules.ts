@@ -4,14 +4,16 @@
 import { paramMap } from './params';
 
 // Connection colors
-export enum ConnColor {
-  Red = 0,
-  Blue = 1,
-  Yellow = 2,
-  Orange = 3,
-  BlueRed = 4,
-  YellowOrange = 5,
-}
+export const ConnColor = {
+  Red: 0,
+  Blue: 1,
+  Yellow: 2,
+  Orange: 3,
+  BlueRed: 4,
+  YellowOrange: 5,
+} as const;
+
+export type ConnColor = (typeof ConnColor)[keyof typeof ConnColor];
 
 export interface PageType {
   name: string;
@@ -54,16 +56,6 @@ export interface ModuleType {
   params: ParamType[];
   modes: ModeType[];
 }
-
-// Color name to enum mapping
-const colorMap: Record<string, ConnColor> = {
-  red: ConnColor.Red,
-  blue: ConnColor.Blue,
-  yellow: ConnColor.Yellow,
-  orange: ConnColor.Orange,
-  blue_red: ConnColor.BlueRed,
-  yellow_orange: ConnColor.YellowOrange,
-};
 
 export const modules: ModuleType[] = [
   {
