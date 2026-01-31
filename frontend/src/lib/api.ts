@@ -62,12 +62,21 @@ export async function getSlotInfo(slot: SlotLetter): Promise<Patch> {
   return response.json();
 }
 
-export async function playNote(midiNote: number, velocity: number): Promise<void> {
-  const response = await fetch(`${API_BASE}/playnote/${midiNote}/${velocity}`, {
-    method: 'POST',
+export async function playNote(midiNote: number): Promise<void> {
+  const response = await fetch(`${API_BASE}/note/${midiNote}`, {
+    method: 'PUT',
   });
   if (!response.ok) {
     throw new Error(`Failed to play note: ${response.statusText}`);
+  }
+}
+
+export async function deleteNote(midiNote: number): Promise<void> {
+  const response = await fetch(`${API_BASE}/note/${midiNote}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to delete note: ${response.statusText}`);
   }
 }
 
@@ -79,12 +88,22 @@ export async function getBank(): Promise<BankDef[]> {
   return response.json();
 }
 
-export async function selectBankItem(type: string, bank: number, patch: number): Promise<ApiResponse> {
-  const response = await fetch(`${API_BASE}/bank/${type}/${bank}/${patch}`, {
+export async function selectPerformance(bank: number, patch: number): Promise<ApiResponse> {
+  const response = await fetch(`${API_BASE}/bank/p/${bank}/${patch}`, {
     method: 'POST',
   });
   if (!response.ok) {
-    throw new Error(`Failed to select bank item: ${response.statusText}`);
+    throw new Error(`Failed to select performance: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function selectPatch(slot: string, bank: number, patch: number): Promise<ApiResponse> {
+  const response = await fetch(`${API_BASE}/bank/${slot}/${bank}/${patch}`, {
+    method: 'POST',
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to select patch: ${response.statusText}`);
   }
   return response.json();
 }

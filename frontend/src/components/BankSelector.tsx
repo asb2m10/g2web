@@ -1,7 +1,7 @@
 // Bank Selector Component
 
 import { useState, useEffect } from 'react';
-import { getBank, selectBankItem } from '../lib/api';
+import { getBank, getSynthSettings, selectPerformance, selectPatch } from '../lib/api';
 import type { BankDef } from '../types/api';
 
 export function BankSelector() {
@@ -33,8 +33,16 @@ export function BankSelector() {
     if (!value) return;
 
     const [type, bank, patch] = value.split(':');
+    const bankNum = parseInt(bank);
+    const patchNum = parseInt(patch);
+
     try {
-      await selectBankItem(type, parseInt(bank), parseInt(patch));
+      if (type.toLowerCase() === 'prf2') {
+        await selectPerformance(bankNum, patchNum);
+      } else if (type.toLowerCase() === 'pch2') {
+        const settings = await getSynthSettings();
+        await selectPatch(settings.focus, bankNum, patchNum);
+      }
     } catch (err) {
       console.error('Failed to select bank item:', err);
     }

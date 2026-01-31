@@ -321,3 +321,126 @@ async def read_patch_file(path: str) -> PatchInfo:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error parsing patch: {str(e)}")
 
+
+
+
+
+
+@app.post("/synth/slot/{slot}/load", tags=["Hardware"])
+async def load_patch_to_slot(slot: str, file: UploadFile = File(...)) -> Dict[str, str]:
+    """Load a patch file into a slot (A, B, C, or D)."""
+    require_usb()
+
+    slot_idx = 'abcd'.find(slot.lower())
+    if slot_idx < 0:
+        raise HTTPException(status_code=400, detail="Slot must be A, B, C, or D")
+
+    try:
+        data = await file.read()
+        null = data.find(b'\0')
+        if null < 0:
+            raise HTTPException(status_code=400, detail="Invalid .pch2 file")
+
+        data = data[null+3:-2]
+        patchname = format_name(Path(file.filename).stem)
+
+        a = bytearray([CMD_A+slot_idx, 0x53, 0x37, 0x00, 0x00, 0x00])
+        a.extend(patchname.encode('latin-1') if isinstance(patchname, str) else patchname)
+        a.extend(data)
+        g2usb.send_message(list(a))
+
+        return {"status": "ok", "slot": slot.upper(), "patch": file.filename}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error loading patch: {str(e)}")
+
+
+@app.post("/synth/slot/{slot}/select", tags=["Hardware"])
+async def select_slot(slot: str) -> Dict[str, str]:
+    """Select active slot (A, B, C, or D)."""
+    require_usb()
+
+    slot_idx = 'abcd'.find(slot.lower())
+    if slot_idx < 0:
+        raise HTTPException(status_code=400, detail="Slot must be A, B, C, or D")
+
+    try:
+        ion = g2usb.send_message([CMD_SYS, 0x41, 0x7d, 0x00])
+        g2usb.send_message([CMD_SYS, ion[3], 0x07, 0x08>>slot_idx, 0x0f, 0x08>>slot_idx])
+        g2usb.send_message([CMD_SYS, ion[3], 0x09, slot_idx])
+        g2usb.send_message([CMD_A+slot_idx, 0x0a, 0x70])
+        return {"status": "ok", "slot": slot.upper()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error selecting slot: {str(e)}")
+
+
+@app.post("/synth/variation/{variation}", tags=["parameters"])
+async def select_variation(variation: int) -> Dict[str, str]:
+    """Select variation (1-8)."""
+    require_usb()
+
+    if variation < 1 or variation > 8:
+        raise HTTPException(status_code=400, detail="Variation must be 1-8")
+
+    try:
+        slota = g2usb.send_message([CMD_SYS, 0x41, 0x35, 0x00])
+        g2usb.send_message([CMD_A, slota[5], 0x6a, variation-1])
+        return {"status": "ok", "variation": variation}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error selecting variation: {str(e)}")
+
+
+@app.put("/api/parameter/{location}/{module}/{parameter}/{value}/{variation}", tags=["parameters"])
+async def set_parameter(
+    location: str,
+    module: int,
+    parameter: int,
+    value: int,
+    variation: int
+) -> Dict[str, Any]:
+    """Set a parameter value on a specific module."""
+    require_usb()
+
+    loc_map = {'FX':0, 'VA':1, 'PATCH':2}
+    loc_idx = loc_map.get(location.upper())
+    if loc_idx is None:
+        raise HTTPException(status_code=400, detail="Location must be FX, VA, or PATCH")
+
+    try:
+        # Get current slot version
+        slot_info = g2usb.send_message([CMD_SYS, 0x41, 0x35, loc_idx])
+        slot_version = slot_info[5]
+
+        # If variation is specified, set it first
+        if variation is not None:
+            if variation < 1 or variation > 8:
+                raise HTTPException(status_code=400, detail="Variation must be 1-8")
+        else:
+            variation = 0
+
+        # Set the parameter value
+        g2usb.send_message(
+            # CMD_NO_RESP   CMD_SLOT
+            [ 0x30 +        0x08 + slot_info,
+             slot_version,
+            # S_SET_PARAM
+             0x40,
+             loc_idx,
+             module,
+             parameter,
+             value,
+             variation])
+
+        response = {
+            "status": "ok",
+            "location": location.upper(),
+            "module": module,
+            "parameter": parameter,
+            "value": value
+        }
+        if variation is not None:
+            response["variation"] = variation
+
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error setting parameter: {str(e)}")
+

@@ -1,7 +1,7 @@
 // Piano Keyboard Component
 
 import { useState } from 'react';
-import { playNote } from '../lib/api';
+import { playNote, deleteNote } from '../lib/api';
 
 interface KeyboardProps {
   isOpen: boolean;
@@ -15,7 +15,6 @@ const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 
 const START_OCTAVE = 3;
 const NUM_OCTAVES = 3;
 const START_NOTE = START_OCTAVE * 12; // MIDI note for C3
-const DEFAULT_VELOCITY = 100;
 
 export function Keyboard({ isOpen, onClose }: KeyboardProps) {
   const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
@@ -25,7 +24,7 @@ export function Keyboard({ isOpen, onClose }: KeyboardProps) {
   const handleNoteOn = async (midiNote: number) => {
     setActiveNotes((prev) => new Set(prev).add(midiNote));
     try {
-      await playNote(midiNote, DEFAULT_VELOCITY);
+      await playNote(midiNote);
     } catch (err) {
       console.error('Failed to play note:', err);
     }
@@ -38,7 +37,7 @@ export function Keyboard({ isOpen, onClose }: KeyboardProps) {
       return next;
     });
     try {
-      await playNote(midiNote, 0);
+      await deleteNote(midiNote);
     } catch (err) {
       console.error('Failed to stop note:', err);
     }
