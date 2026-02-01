@@ -1,7 +1,11 @@
-import traceback
-from typing import List
+"""
+This module acts as a proxy to g2ools and most common used import.
 
-from pydantic import BaseModel
+It is design to avoid hard dependencies to the internal types in g2ools.
+"""
+
+import traceback
+
 from fastapi import HTTPException
 
 # Optional hardware support

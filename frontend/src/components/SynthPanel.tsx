@@ -9,12 +9,14 @@ import { PatchUpload } from './PatchUpload';
 import { SlotView } from './SlotView';
 import { Keyboard } from './Keyboard';
 import { BankSelector } from './BankSelector';
+import { MidiRouter } from './MidiRouter';
 import type { SlotLetter } from '../types/api';
 
 export function SynthPanel() {
   const { data: settings, isLoading, isError } = useSynthSettings();
   const [viewSlot, setViewSlot] = useState<SlotLetter | null>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [loadPatchOpen, setLoadPatchOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -31,6 +33,12 @@ export function SynthPanel() {
           </div>
           <div className="flex items-center gap-4">
             <button
+              onClick={() => setLoadPatchOpen(true)}
+              className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded text-sm font-medium transition-colors"
+            >
+              Load Patch
+            </button>
+            <button
               onClick={() => setKeyboardOpen(true)}
               className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded text-sm font-medium transition-colors"
             >
@@ -42,6 +50,31 @@ export function SynthPanel() {
       </header>
 
       <Keyboard isOpen={keyboardOpen} onClose={() => setKeyboardOpen(false)} />
+
+      {/* Load Patch popup */}
+      {loadPatchOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setLoadPatchOpen(false)}>
+          <div
+            className="bg-gray-800 rounded-lg p-4 shadow-xl w-96"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-medium">Load Patch</h3>
+              <button
+                onClick={() => setLoadPatchOpen(false)}
+                className="text-gray-400 hover:text-white text-xl leading-none"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {(['A', 'B', 'C', 'D'] as SlotLetter[]).map((slot) => (
+                <PatchUpload key={slot} slot={slot} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main content */}
       <main className="max-w-4xl mx-auto p-6 space-y-8">
@@ -117,18 +150,11 @@ export function SynthPanel() {
 
             {/* Variation selector */}
             <VariationSelector />
-
-            {/* Patch upload */}
-            <div className="space-y-3">
-              <h2 className="text-lg font-semibold text-gray-300">Load Patch</h2>
-              <div className="grid grid-cols-2 gap-4">
-                {(['A', 'B', 'C', 'D'] as SlotLetter[]).map((slot) => (
-                  <PatchUpload key={slot} slot={slot} />
-                ))}
-              </div>
-            </div>
           </>
         )}
+
+        {/* MIDI Input routing */}
+        <MidiRouter />
       </main>
 
       {/* Footer */}

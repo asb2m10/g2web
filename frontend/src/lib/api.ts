@@ -34,7 +34,7 @@ export async function loadPatch(slot: SlotLetter, file: File): Promise<ApiRespon
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await fetch(`${API_BASE}/synth/slot/${slot}/load`, {
+  const response = await fetch(`${API_BASE}/synth/slot/${slot}/upload`, {
     method: 'POST',
     body: formData,
   });
@@ -45,7 +45,7 @@ export async function loadPatch(slot: SlotLetter, file: File): Promise<ApiRespon
 }
 
 export async function setVariation(variation: Variation): Promise<ApiResponse> {
-  const response = await fetch(`${API_BASE}/synth/variation/${variation}`, {
+  const response = await fetch(`${API_BASE}/variation/${variation}`, {
     method: 'POST',
   });
   if (!response.ok) {

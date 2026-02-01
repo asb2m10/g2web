@@ -125,30 +125,6 @@ export function PatchView({ patch }: PatchViewProps) {
           </div>
         )}
       </div>
-
-      {/* Module list (compact) */}
-      <details className="bg-gray-800 rounded-lg border border-gray-700">
-        <summary className="px-4 py-2 cursor-pointer text-gray-400 hover:text-white">
-          Module List ({patch.modules.length})
-        </summary>
-        <div className="px-4 pb-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-          {patch.modules.map((module) => (
-            <button
-              key={module.instance}
-              onClick={() => handleModuleClick(module)}
-              className={`
-                text-left p-2 rounded text-sm transition-colors
-                ${selectedModule?.instance === module.instance
-                  ? 'bg-nord-blue text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                }
-              `}
-            >
-              <span className="opacity-60">#{module.instance}</span> {module.typeName}
-            </button>
-          ))}
-        </div>
-      </details>
     </div>
   );
 }

@@ -1,12 +1,13 @@
 from typing import List, Literal, Dict
 
-import g2
-from fastapi import APIRouter, HTTPException, UploadFile, File
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
 
+import g2
 from g2ools.nord.g2.categories import g2categories
 
-router = APIRouter(prefix="/api", tags=["bank"])
+router = APIRouter(prefix="/api", tags=["Bank"])
+
 
 class BankDef(BaseModel):
     type: Literal["pch2", "prf2"]
@@ -15,6 +16,7 @@ class BankDef(BaseModel):
     name: str
     id: str
     category: str
+
 
 @router.get("/bank")
 async def get_bank() -> List[BankDef]:
@@ -56,6 +58,7 @@ async def get_bank() -> List[BankDef]:
                 mode, bank, patch, data = mode+1, 0, 0, data[1:]
     return ret
 
+
 @router.post("/bank/{slot}/{bank}/{patch}")
 async def select_bank_item(slot: str, bank: int, patch: int) -> Dict[str, str]:
     """Select a bank item by type and ID."""
@@ -69,4 +72,4 @@ async def select_bank_item(slot: str, bank: int, patch: int) -> Dict[str, str]:
         raise HTTPException(status_code=400, detail="Bank must be between 1 and 32")
 
     g2.g2usb.send_message([g2.CMD_SYS, 0x41, 0x0a, slot, bank, patch])
-    return {"status": "ok"} #, "bank": bank+1, "patch": patch+1}
+    return {"status": "ok"}

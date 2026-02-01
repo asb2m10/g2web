@@ -1,18 +1,21 @@
 // Variation selector (1-8)
 
+import { useState } from 'react';
 import { useSetVariation } from '../hooks/useApi';
 import type { Variation } from '../types/api';
 
 interface VariationSelectorProps {
-  currentVariation?: number;
+  initialVariation?: number;
 }
 
 const VARIATIONS: Variation[] = [1, 2, 3, 4, 5, 6, 7, 8];
 
-export function VariationSelector({ currentVariation = 1 }: VariationSelectorProps) {
+export function VariationSelector({ initialVariation = 1 }: VariationSelectorProps) {
+  const [currentVariation, setCurrentVariation] = useState(initialVariation);
   const setVariation = useSetVariation();
 
   const handleSelect = (variation: Variation) => {
+    setCurrentVariation(variation);
     setVariation.mutate(variation);
   };
 
