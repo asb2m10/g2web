@@ -11,7 +11,7 @@ from fastapi import HTTPException
 # Optional hardware support
 try:
     from g2ools.g2ctl import G2USBInterface, g2usb, parse_name, format_name
-    from g2ools.g2ctl import CMD_A, CMD_SYS
+    from g2ools.g2ctl import CMD_A, CMD_SYS, CMD_SEND
     send_message = g2usb.send_message
     HAS_USB = True
 except Exception:

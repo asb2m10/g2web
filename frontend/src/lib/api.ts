@@ -21,7 +21,7 @@ export async function getSynthSettings(): Promise<SynthSettings> {
 }
 
 export async function selectSlot(slot: SlotLetter): Promise<ApiResponse> {
-  const response = await fetch(`${API_BASE}/synth/slot/${slot}/select`, {
+  const response = await fetch(`${API_BASE}/slot/${slot}/select`, {
     method: 'POST',
   });
   if (!response.ok) {
@@ -34,7 +34,7 @@ export async function loadPatch(slot: SlotLetter, file: File): Promise<ApiRespon
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await fetch(`${API_BASE}/synth/slot/${slot}/upload`, {
+  const response = await fetch(`${API_BASE}/slot/${slot}/upload`, {
     method: 'POST',
     body: formData,
   });
@@ -50,6 +50,23 @@ export async function setVariation(variation: Variation): Promise<ApiResponse> {
   });
   if (!response.ok) {
     throw new Error(`Failed to set variation: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function setParameter(
+  location: 'FX' | 'VA' | 'PATCH',
+  module: number,
+  parameter: number,
+  value: number,
+  variation: number
+): Promise<ApiResponse> {
+  const response = await fetch(
+    `${API_BASE}/parameter/${location}/${module}/${parameter}/${value}/${variation}`,
+    { method: 'POST' }
+  );
+  if (!response.ok) {
+    throw new Error(`Failed to set parameter: ${response.statusText}`);
   }
   return response.json();
 }

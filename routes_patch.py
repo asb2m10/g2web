@@ -1,6 +1,5 @@
 """Patch-related API endpoints."""
 
-import logging
 from pathlib import Path
 from typing import Dict, List, Tuple
 

@@ -1,8 +1,10 @@
 // Module View Component - renders a single G2 module
 
+import { useState } from 'react';
 import type { Module, Parameter } from '../types/api';
 import { getModuleById, ConnColor } from '../types/modules';
 import { paramMap } from '../types/params';
+import { useSetParameter } from '../hooks/useApi';
 
 // Module colors from G2 (index corresponds to color value)
 const MODULE_COLORS = [
@@ -37,11 +39,22 @@ interface ModuleViewProps {
 interface ParameterDisplayProps {
   param: Parameter;
   paramDef: typeof paramMap[string] | undefined;
+  paramIndex: number;
   activeVariation: number;
+  moduleInstance: number;
+  onValueChange: (paramIndex: number, value: number) => void;
 }
 
-function ParameterDisplay({ param, paramDef, activeVariation }: ParameterDisplayProps) {
-  const value = param.values[activeVariation] ?? param.values[0] ?? 0;
+function ParameterDisplay({
+  param,
+  paramDef,
+  paramIndex,
+  activeVariation,
+  moduleInstance,
+  onValueChange,
+}: ParameterDisplayProps) {
+  const [localValue, setLocalValue] = useState<number | null>(null);
+  const value = localValue ?? param.values[activeVariation] ?? param.values[0] ?? 0;
 
   // Get display value from param definition
   let displayValue: string = String(value);
@@ -56,22 +69,42 @@ function ParameterDisplay({ param, paramDef, activeVariation }: ParameterDisplay
     }
   }
 
-  // Calculate percentage for visual indicator
   const min = paramDef?.low ?? 0;
   const max = paramDef?.high ?? 127;
   const percentage = max > min ? ((value - min) / (max - min)) * 100 : 0;
+
+  const handleChange = (newValue: number) => {
+    setLocalValue(newValue);
+  };
+
+  const handleCommit = () => {
+    if (localValue !== null) {
+      onValueChange(paramIndex, localValue);
+      setLocalValue(null);
+    }
+  };
 
   return (
     <div className="flex items-center gap-2 text-xs">
       <span className="text-gray-400 w-20 truncate" title={param.name}>
         {param.name}
       </span>
-      <div className="flex-1 h-1.5 bg-gray-700 rounded-full overflow-hidden">
-        <div
-          className="h-full bg-nord-blue transition-all"
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        value={value}
+        onChange={(e) => handleChange(parseInt(e.target.value))}
+        onMouseUp={handleCommit}
+        onTouchEnd={handleCommit}
+        className="flex-1 h-1.5 bg-gray-700 rounded-full appearance-none cursor-pointer
+          [&::-webkit-slider-thumb]:appearance-none
+          [&::-webkit-slider-thumb]:w-3
+          [&::-webkit-slider-thumb]:h-3
+          [&::-webkit-slider-thumb]:rounded-full
+          [&::-webkit-slider-thumb]:bg-nord-blue
+          [&::-webkit-slider-thumb]:cursor-pointer"
+      />
       <span className="text-gray-300 w-12 text-right truncate" title={displayValue}>
         {displayValue}
       </span>
@@ -160,6 +193,17 @@ interface ModuleDetailProps {
 export function ModuleDetail({ module, activeVariation, onClose }: ModuleDetailProps) {
   const moduleDef = getModuleById(module.type);
   const moduleColor = MODULE_COLORS[module.color] || MODULE_COLORS[7];
+  const setParameter = useSetParameter();
+
+  const handleParameterChange = (paramIndex: number, value: number) => {
+    setParameter.mutate({
+      location: 'VA',
+      module: module.instance,
+      parameter: paramIndex,
+      value,
+      variation: activeVariation + 1, // API expects 1-based
+    });
+  };
 
   return (
     <div className="bg-gray-800 rounded-lg overflow-hidden shadow-xl border border-gray-700">
@@ -199,7 +243,10 @@ export function ModuleDetail({ module, activeVariation, onClose }: ModuleDetailP
                 key={idx}
                 param={param}
                 paramDef={paramDef}
+                paramIndex={idx}
                 activeVariation={activeVariation}
+                moduleInstance={module.instance}
+                onValueChange={handleParameterChange}
               />
             );
           })
@@ -211,6 +258,7 @@ export function ModuleDetail({ module, activeVariation, onClose }: ModuleDetailP
         <span>X: {module.pos_x}</span>
         <span>Y: {module.pos_y}</span>
         {moduleDef && <span>Height: {moduleDef.height}</span>}
+        <span className="text-nord-blue">VA</span>
       </div>
     </div>
   );

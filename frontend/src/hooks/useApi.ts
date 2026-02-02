@@ -7,6 +7,7 @@ import {
   selectSlot,
   loadPatch,
   setVariation,
+  setParameter,
   getSlotInfo,
 } from '../lib/api';
 import type { SlotLetter, Variation } from '../types/api';
@@ -64,13 +65,27 @@ export function useLoadPatch() {
 
 // Set variation mutation
 export function useSetVariation() {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (variation: Variation) => setVariation(variation),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.settings });
-    },
+  });
+}
+
+// Set parameter mutation
+export function useSetParameter() {
+  return useMutation({
+    mutationFn: ({
+      location,
+      module,
+      parameter,
+      value,
+      variation,
+    }: {
+      location: 'FX' | 'VA' | 'PATCH';
+      module: number;
+      parameter: number;
+      value: number;
+      variation: number;
+    }) => setParameter(location, module, parameter, value, variation),
   });
 }
 
