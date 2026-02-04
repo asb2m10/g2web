@@ -1,7 +1,7 @@
 // Main synth control panel
 
 import { useState } from 'react';
-import { useSynthSettings } from '../hooks/useApi';
+import { useSynthSettings, useSetMode } from '../hooks/useApi';
 import { ConnectionStatus } from './ConnectionStatus';
 import { SlotSelector } from './SlotSelector';
 import { VariationSelector } from './VariationSelector';
@@ -14,9 +14,15 @@ import type { SlotLetter } from '../types/api';
 
 export function SynthPanel() {
   const { data: settings, isLoading, isError } = useSynthSettings();
-  const [viewSlot, setViewSlot] = useState<SlotLetter | null>(null);
+  const setMode = useSetMode();
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [loadPatchOpen, setLoadPatchOpen] = useState(false);
+
+  const handleModeToggle = () => {
+    if (!settings) return;
+    const newMode = settings.mode === 'performance' ? 'patch' : 'performance';
+    setMode.mutate(newMode);
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -26,9 +32,13 @@ export function SynthPanel() {
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-bold text-nord-blue">G2 Controller</h1>
             {settings && (
-              <span className="text-sm text-gray-400 bg-gray-700 px-2 py-1 rounded">
+              <button
+                onClick={handleModeToggle}
+                disabled={setMode.isPending}
+                className="text-sm text-gray-400 bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded transition-colors cursor-pointer disabled:opacity-50"
+              >
                 {settings.mode}
-              </span>
+              </button>
             )}
           </div>
           <div className="flex items-center gap-4">
@@ -122,31 +132,8 @@ export function SynthPanel() {
             {/* Slot selector */}
             <SlotSelector slots={settings.slots} activeSlot={settings.focus} />
 
-            {/* Slot view tabs */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-4">
-                <h2 className="text-lg font-semibold text-gray-300">Patch View</h2>
-                <div className="flex gap-2">
-                  {(['A', 'B', 'C', 'D'] as SlotLetter[]).map((slot) => (
-                    <button
-                      key={slot}
-                      onClick={() => setViewSlot(viewSlot === slot ? null : slot)}
-                      className={`
-                        px-3 py-1 rounded text-sm font-medium transition-colors
-                        ${viewSlot === slot
-                          ? 'bg-nord-blue text-white'
-                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        }
-                      `}
-                    >
-                      {slot}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {viewSlot && <SlotView slot={viewSlot} />}
-            </div>
+            {/* Slot modules */}
+            <SlotView slot={settings.focus as SlotLetter} />
 
             {/* Variation selector */}
             <VariationSelector />

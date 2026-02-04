@@ -1,7 +1,8 @@
 // Bank Selector Component
 
 import { useState, useEffect } from 'react';
-import { getBank, getSynthSettings, selectPerformance, selectPatch } from '../lib/api';
+import { getBank } from '../lib/api';
+import { useSynthSettings, useSelectPerformance, useSelectPatch } from '../hooks/useApi';
 import type { BankDef } from '../types/api';
 
 export function BankSelector() {
@@ -9,6 +10,10 @@ export function BankSelector() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedValue, setSelectedValue] = useState<string>('');
+
+  const { data: settings } = useSynthSettings();
+  const selectPerformance = useSelectPerformance();
+  const selectPatch = useSelectPatch();
 
   useEffect(() => {
     async function fetchBanks() {
@@ -26,7 +31,7 @@ export function BankSelector() {
     fetchBanks();
   }, []);
 
-  const handleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     setSelectedValue(value);
 
@@ -36,15 +41,10 @@ export function BankSelector() {
     const bankNum = parseInt(bank);
     const patchNum = parseInt(patch);
 
-    try {
-      if (type.toLowerCase() === 'prf2') {
-        await selectPerformance(bankNum, patchNum);
-      } else if (type.toLowerCase() === 'pch2') {
-        const settings = await getSynthSettings();
-        await selectPatch(settings.focus, bankNum, patchNum);
-      }
-    } catch (err) {
-      console.error('Failed to select bank item:', err);
+    if (type.toLowerCase() === 'prf2') {
+      selectPerformance.mutate({ bank: bankNum, patch: patchNum });
+    } else if (type.toLowerCase() === 'pch2' && settings) {
+      selectPatch.mutate({ slot: settings.focus, bank: bankNum, patch: patchNum });
     }
   };
 

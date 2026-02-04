@@ -124,3 +124,13 @@ export async function selectPatch(slot: string, bank: number, patch: number): Pr
   }
   return response.json();
 }
+
+export async function setMode(mode: 'performance' | 'patch'): Promise<ApiResponse> {
+  const response = await fetch(`${API_BASE}/mode/${mode}`, {
+    method: 'POST',
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to set mode: ${response.statusText}`);
+  }
+  return response.json();
+}

@@ -28,7 +28,6 @@ export function SlotSelector({ slots, activeSlot }: SlotSelectorProps) {
         {SLOT_LETTERS.map((letter) => {
           const slot = getSlotInfo(letter);
           const isActive = activeSlot === letter;
-          const isAvailable = slot?.available ?? false;
 
           return (
             <button
@@ -39,9 +38,7 @@ export function SlotSelector({ slots, activeSlot }: SlotSelectorProps) {
                 relative p-4 rounded-lg font-bold text-2xl transition-all
                 ${isActive
                   ? 'bg-nord-blue text-white shadow-lg shadow-nord-blue/30'
-                  : isAvailable
-                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    : 'bg-gray-800 text-gray-600 cursor-not-allowed'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                 }
               `}
             >

@@ -9,6 +9,9 @@ import {
   setVariation,
   setParameter,
   getSlotInfo,
+  setMode,
+  selectPerformance,
+  selectPatch,
 } from '../lib/api';
 import type { SlotLetter, Variation } from '../types/api';
 
@@ -96,5 +99,45 @@ export function useSlotInfo(slot: SlotLetter | null) {
     queryFn: () => getSlotInfo(slot!),
     enabled: !!slot,
     retry: false,
+  });
+}
+
+// Set mode mutation
+export function useSetMode() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (mode: 'performance' | 'patch') => setMode(mode),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings });
+    },
+  });
+}
+
+// Select performance from bank mutation
+export function useSelectPerformance() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ bank, patch }: { bank: number; patch: number }) =>
+      selectPerformance(bank, patch),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings });
+      queryClient.invalidateQueries({ queryKey: ['api', 'slot'] });
+    },
+  });
+}
+
+// Select patch from bank mutation
+export function useSelectPatch() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ slot, bank, patch }: { slot: string; bank: number; patch: number }) =>
+      selectPatch(slot, bank, patch),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings });
+      queryClient.invalidateQueries({ queryKey: ['api', 'slot'] });
+    },
   });
 }

@@ -61,10 +61,10 @@ async def get_slot_info(slot: str) -> Patch:
     slot_idx = 'abcd'.find(slot.lower())
     if slot_idx < 0:
         raise HTTPException(status_code=400, detail="Slot must be A, B, C, or D")
-
-    version = g2.send_message([g2.CMD_SYS, 0x41, 0x35, slot_idx])[5]
-    data = g2.send_message([g2.CMD_A+slot_idx, version, 0x3c])
-    name = g2.send_message([g2.CMD_A+slot_idx, version, 0x28])
+    with g2.semaphore:
+        version = g2.send_message([g2.CMD_SYS, 0x41, 0x35, slot_idx])[5]
+        data = g2.send_message([g2.CMD_A+slot_idx, version, 0x3c])
+        name = g2.send_message([g2.CMD_A+slot_idx, version, 0x28])
     name, junk = g2.parse_name(name[4:])
     #printf("%s\n", hexdump(data[1:-2]))
     pch2 = Pch2File()
@@ -105,15 +105,16 @@ async def get_slot_info(slot: str) -> Patch:
         modules[dest.module.index].outboundConnections.append(outbound)
 
     knobs = []
-    for i, knob in enumerate(pch2.patch.knobs):
-        if knob.assigned and hasattr(knob.param, 'module'):
-            knobs.append(KnobParameter(
-                index=i,
-                area=['fx', 'voice', 'perf'][knob.param.module.area.index],
-                position="%s%d:%d" % ('ABCDE'[i//24], (i/8)%3, i&7),
-                module=knob.param.module.index,
-                parameter=knob.param.index
-            ))
+    if hasattr(pch2.patch, 'knobs'):
+        for i, knob in enumerate(pch2.patch.knobs):
+            if knob.assigned and hasattr(knob.param, 'module'):
+                knobs.append(KnobParameter(
+                    index=i,
+                    area=['fx', 'voice', 'perf'][knob.param.module.area.index],
+                    position="%s%d:%d" % ('ABCDE'[i//24], (i/8)%3, i&7),
+                    module=knob.param.module.index,
+                    parameter=knob.param.index
+                ))
 
     patch = Patch(
         name=name,
@@ -147,7 +148,7 @@ async def upload_patch_to_slot(slot: str, file: UploadFile = File(...)) -> Dict[
         a = bytearray([g2.CMD_A+slot_idx, 0x53, 0x37, 0x00, 0x00, 0x00])
         a.extend(patchname.encode('latin-1') if isinstance(patchname, str) else patchname)
         a.extend(data)
-        g2.g2usb.send_message(list(a))
+        g2.send_message(list(a))
 
         return {"status": "ok", "slot": slot.upper(), "patch": file.filename}
     except Exception as e:
@@ -162,14 +163,8 @@ async def select_slot(slot: str) -> Dict[str, str]:
     if slot_idx < 0:
         raise HTTPException(status_code=400, detail="Slot must be A, B, C, or D")
 
-    try:
-        ion = g2.g2usb.send_message([g2.CMD_SYS, 0x41, 0x7d, 0x00])
-        g2.g2usb.send_message([g2.CMD_SYS, ion[3], 0x07, 0x08>>slot_idx, 0x0f, 0x08>>slot_idx])
-        g2.g2usb.send_message([g2.CMD_SYS, ion[3], 0x09, slot_idx])
-        g2.g2usb.send_message([g2.CMD_A+slot_idx, 0x0a, 0x70])
-        return {"status": "ok", "slot": slot.upper()}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error selecting slot: {str(e)}")
+    g2.send_message([0x2c, 0x00, 0x09, slot_idx])
+    return {"status": "ok", "slot": slot.upper()}
 
 @router.put("/note/{midi_note}", tags=["Note"])
 async def play_note(midi_note: int) -> Dict[str, str]:
@@ -178,7 +173,7 @@ async def play_note(midi_note: int) -> Dict[str, str]:
 
     if not (0 <= midi_note <= 127):
         raise HTTPException(status_code=400, detail="MIDI note must be between 0 and 127")
-    resp = g2.g2usb.send_message([g2.CMD_SYS, 0x41, 0x56, 1, midi_note])
+    resp = g2.send_message([g2.CMD_SYS, 0x41, 0x56, 0, midi_note])
     return { "status": "ok" }
 
 @router.delete("/note/{midi_note}", tags=["Note"])
@@ -188,5 +183,5 @@ async def remove_note(midi_note: int) -> Dict[str, str]:
 
     if not (0 <= midi_note <= 127):
         raise HTTPException(status_code=400, detail="MIDI note must be between 0 and 127")
-    resp = g2.g2usb.send_message([g2.CMD_SYS, 0x41, 0x56, 0, midi_note])
+    resp = g2.send_message([g2.CMD_SYS, 0x41, 0x56, 1, midi_note])
     return { "status": "ok" }

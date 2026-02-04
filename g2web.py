@@ -66,26 +66,38 @@ async def select_variation(variation: int) -> Dict[str, str]:
         raise HTTPException(status_code=400, detail="Variation must be 1-8")
 
     try:
-        slota = g2.send_message([g2.CMD_SYS, 0x41, 0x35, 0x00])
-        g2.send_message([g2.CMD_A, slota[5], 0x6a, variation-1])
+        with g2.semaphore:
+            slota = g2.send_message([g2.CMD_SYS, 0x41, 0x35, 0x00])
+            g2.send_message([g2.CMD_A, slota[5], 0x6a, variation-1])
         return {"status": "ok"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error selecting variation: {str(e)}")
 
+from enum import Enum
+class ModeType(str, Enum):
+    PATCH = "patch"
+    PERF = "performance"
+@app.post("/api/mode/{mode}", tags=["Mode"])
+async def select_mode(mode: ModeType = Path("Switch to performance or patch mode")) -> Dict[str, str]:
+    """Select mode (Performance or Patch)."""
+    g2.require_usb()
+    modes = {'patch': 0, 'performance': 1}
+    data = g2.send_message([g2.CMD_SYS, 0x41, 0x3e, modes.get(mode, 0), 0x00])
+    return {"status": "ok"}
 
 # ============== Static Files (Frontend) ==============
-STATIC_DIR = Path(__file__).parent / "frontend" / "dist"
-if STATIC_DIR.exists():
-    # Serve static assets (js, css, images)
-    app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
-
-    @app.get("/{path:path}", tags=["static"])
-    async def serve_frontend(path: str):
-        """Serve frontend SPA - returns index.html for all non-API routes."""
-        file_path = STATIC_DIR / path
-        if file_path.exists() and file_path.is_file():
-            return FileResponse(file_path)
-        return FileResponse(STATIC_DIR / "index.html")
+# STATIC_DIR = Path(__file__).parent / "frontend" / "dist"
+# if STATIC_DIR.exists():
+#     # Serve static assets (js, css, images)
+#     app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
+#
+#     @app.get("/{path:path}", tags=["static"])
+#     async def serve_frontend(path: str):
+#         """Serve frontend SPA - returns index.html for all non-API routes."""
+#         file_path = STATIC_DIR / path
+#         if file_path.exists() and file_path.is_file():
+#             return FileResponse(file_path)
+#         return FileResponse(STATIC_DIR / "index.html")
 
 
 def register_mdns(port: int = 8000):

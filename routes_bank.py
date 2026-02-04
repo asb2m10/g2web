@@ -30,7 +30,7 @@ async def get_bank() -> List[BankDef]:
     ret = []
     while mode < END_MODE:
         cmd = [g2.CMD_SYS, 0x41, 0x14, mode, bank, patch]
-        data = g2.g2usb.send_message(cmd)
+        data = g2.send_message(cmd)
         data = bytes(data[9:-2])
         while len(data):
             c = data[0]
@@ -71,5 +71,5 @@ async def select_bank_item(slot: str, bank: int, patch: int) -> Dict[str, str]:
     if patch < 1 or patch > 127:
         raise HTTPException(status_code=400, detail="Bank must be between 1 and 32")
 
-    g2.g2usb.send_message([g2.CMD_SYS, 0x41, 0x0a, slot, bank, patch])
+    g2.send_message([g2.CMD_SYS, 0x41, 0x0a, slot, bank-1, patch-1])
     return {"status": "ok"}

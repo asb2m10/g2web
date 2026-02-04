@@ -368,6 +368,7 @@ async def select_slot(slot: str) -> Dict[str, str]:
         g2usb.send_message([CMD_SYS, ion[3], 0x07, 0x08>>slot_idx, 0x0f, 0x08>>slot_idx])
         g2usb.send_message([CMD_SYS, ion[3], 0x09, slot_idx])
         g2usb.send_message([CMD_A+slot_idx, 0x0a, 0x70])
+        ion = g2usb.send_message([CMD_SYS, 0x41, 0x7d, 0x00])
         return {"status": "ok", "slot": slot.upper()}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error selecting slot: {str(e)}")
