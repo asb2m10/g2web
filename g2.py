@@ -4,6 +4,7 @@ This module acts as a proxy to g2ools and most common used import.
 It is design to avoid hard dependencies to the internal types in g2ools.
 """
 
+import asyncio
 import traceback
 
 from fastapi import HTTPException
