@@ -27,7 +27,7 @@ export function useSynthStatus() {
   return useQuery({
     queryKey: queryKeys.status,
     queryFn: getSynthStatus,
-    refetchInterval: 3000, // Poll every 3 seconds
+    refetchInterval: 60000, // Poll every 3 seconds
     retry: false,
   });
 }
@@ -77,18 +77,20 @@ export function useSetVariation() {
 export function useSetParameter() {
   return useMutation({
     mutationFn: ({
+      slot,
       location,
       module,
       parameter,
       value,
       variation,
     }: {
+      slot: SlotLetter
       location: 'FX' | 'VA' | 'PATCH';
       module: number;
       parameter: number;
       value: number;
       variation: number;
-    }) => setParameter(location, module, parameter, value, variation),
+    }) => setParameter(slot, location, module, parameter, value, variation),
   });
 }
 

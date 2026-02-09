@@ -11,7 +11,6 @@ import traceback
 import logging
 
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.staticfiles import StaticFiles
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, FileResponse
 
@@ -136,7 +135,7 @@ if __name__ == "__main__":
     import uvicorn
     import sys
 
-    if sys.argv[1] != "dev" :
+    if len(sys.argv) > 1 and sys.argv[1] != "register" :
         logging.basicConfig(level=logging.INFO)
         zc, service_info = register_mdns(8000)
 

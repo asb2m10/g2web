@@ -1,8 +1,37 @@
 # Clavia Nord G2 Modular Editor
 A web interface to the Clavia Nord Modular G2. Specifically designed to be used with RaspberryPI W or Norms. 
 
-Once install, you can point your device to : ![image](frontend/public/g2-location.png)
+# Installation
+## Python requirements
+Be sure to install the python requirements (`pip install -r requirements.txt`) and then run the 
+server with `python g2web.py`. The server will be available at `http://localhost:5000`.
 
+## USB requirements
+This project uses the [pyusb](https://github.com/pyusb/pyusb) library to communicate with the G2 by using 
+[libusb](https://libusb.info/) that can be used in user mode. 
+
+On Debian-based Linux distributions, you can install it with 
+`sudo apt-get install libusb-1.0-0-dev`. On macOS, you can install it with 
+Homebrew using `brew install libusb`.
+
+### Linux USB permission
+If you have permission denied errors when trying to access the G2, you may need to create a udev rule to give your user 
+permission to access the device. Create a file named `/etc/udev/rules.d/50-g2-nord.rules`
+
+```
+SUBSYSTEM=="usb", ATTR{idVendor}=="0ffc", ATTR{idProduct}=="0002", MODE="0666"
+```
+Then run `sudo udevadm control --reload-rules` and unplug/replug the G2.
+
+## Frontend build
+If you are not using the packaged version, the frontend needs to be built from source. You can do this by running `npm run build` in the `frontend` directory.
+This will create a build of the frontend in the `frontend/dist` directory that the python API will serve if available.
+
+You can run the frontend in development mode by running `npm run dev` in the `frontend` directory. This will start a
+development server that will automatically reload the frontend when you
+at `http://localhost:5173`
+
+# Extra docs
 ## Reference for other G2 open source implementations
 - Python: https://github.com/msg/g2ools
 - Pascal: https://github.com/BVerhue/nord_g2_editor`

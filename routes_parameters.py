@@ -7,8 +7,9 @@ import g2
 
 router = APIRouter(prefix="/api", tags=["Parameters"])
 
-@router.post("/parameter/{location}/{module}/{parameter}/{value}/{variation}", tags=["Parameters"])
+@router.post("/parameter/{slot}/{location}/{module}/{parameter}/{value}/{variation}", tags=["Parameters"])
 async def set_parameter(
+        slot: str,
         location: str,
         module: int,
         parameter: int,
@@ -17,6 +18,10 @@ async def set_parameter(
 ) -> Dict[str, Any]:
     """Set a parameter value on a specific module."""
     g2.require_usb()
+
+    slot_idx = 'abcd'.find(slot.lower())
+    if slot_idx < 0:
+        raise HTTPException(status_code=400, detail="Slot must be one of A, B, C, D")
 
     loc_map = {'FX':0, 'VA':1, 'PATCH':2}
     loc_idx = loc_map.get(location.upper())
@@ -39,20 +44,19 @@ async def set_parameter(
         raise HTTPException(status_code=400, detail="Value must be 0-255")
 
     # Get current slot version
-    slot_info = g2.send_message([g2.CMD_SYS, 0x41, 0x35, loc_idx])
-    slot_version = slot_info[5]
+    slot_version = g2.send_message([g2.CMD_SYS, 0x41, 0x35, slot_idx])[5]
 
     # Set the parameter value
     g2.send_message(
         # CMD_NO_RESP   CMD_SLOT
-        [ g2.CMD_SEND + 0x08 + slot_info,
+        [ g2.CMD_SEND + 0x08 + slot_idx,
           slot_version,
           0x40,
           loc_idx,
           module,
           parameter,
           value,
-          variation])
+          variation], g2.CMD_SEND)
 
     response = {
         "status": "ok",

@@ -119,6 +119,7 @@ export function PatchView({ patch }: PatchViewProps) {
           <div className="w-80 flex-shrink-0">
             <ModuleDetail
               module={selectedModule}
+              activeSlot={patch.slot}
               activeVariation={patch.activeVariation}
               onClose={() => setSelectedModule(null)}
             />

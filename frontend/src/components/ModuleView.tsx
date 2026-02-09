@@ -41,7 +41,6 @@ interface ParameterDisplayProps {
   paramDef: typeof paramMap[string] | undefined;
   paramIndex: number;
   activeVariation: number;
-  moduleInstance: number;
   onValueChange: (paramIndex: number, value: number) => void;
 }
 
@@ -50,7 +49,6 @@ function ParameterDisplay({
   paramDef,
   paramIndex,
   activeVariation,
-  moduleInstance,
   onValueChange,
 }: ParameterDisplayProps) {
   const [localValue, setLocalValue] = useState<number | null>(null);
@@ -71,7 +69,6 @@ function ParameterDisplay({
 
   const min = paramDef?.low ?? 0;
   const max = paramDef?.high ?? 127;
-  const percentage = max > min ? ((value - min) / (max - min)) * 100 : 0;
 
   const handleChange = (newValue: number) => {
     setLocalValue(newValue);
@@ -186,17 +183,19 @@ export function ModuleView({ module, scale = 1, onClick, selected }: ModuleViewP
 // Expanded module panel for showing parameters
 interface ModuleDetailProps {
   module: Module;
+  activeSlot: number;
   activeVariation: number;
   onClose: () => void;
 }
 
-export function ModuleDetail({ module, activeVariation, onClose }: ModuleDetailProps) {
+export function ModuleDetail({ module, activeSlot, activeVariation, onClose }: ModuleDetailProps) {
   const moduleDef = getModuleById(module.type);
   const moduleColor = MODULE_COLORS[module.color] || MODULE_COLORS[7];
   const setParameter = useSetParameter();
 
   const handleParameterChange = (paramIndex: number, value: number) => {
     setParameter.mutate({
+      slot: activeSlot,
       location: 'VA',
       module: module.instance,
       parameter: paramIndex,
@@ -245,7 +244,6 @@ export function ModuleDetail({ module, activeVariation, onClose }: ModuleDetailP
                 paramDef={paramDef}
                 paramIndex={idx}
                 activeVariation={activeVariation}
-                moduleInstance={module.instance}
                 onValueChange={handleParameterChange}
               />
             );

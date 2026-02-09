@@ -55,6 +55,7 @@ export async function setVariation(variation: Variation): Promise<ApiResponse> {
 }
 
 export async function setParameter(
+  slot: SlotLetter,
   location: 'FX' | 'VA' | 'PATCH',
   module: number,
   parameter: number,
@@ -62,7 +63,7 @@ export async function setParameter(
   variation: number
 ): Promise<ApiResponse> {
   const response = await fetch(
-    `${API_BASE}/parameter/${location}/${module}/${parameter}/${value}/${variation}`,
+    `${API_BASE}/parameter/${slot}/${location}/${module}/${parameter}/${value}/${variation}`,
     { method: 'POST' }
   );
   if (!response.ok) {
