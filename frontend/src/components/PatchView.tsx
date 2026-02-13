@@ -1,6 +1,6 @@
 // Patch View Component - renders the patch canvas with all modules
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { Patch, Module } from '../types/api';
 import { ModuleView, ModuleDetail } from './ModuleView';
 
@@ -11,6 +11,10 @@ interface PatchViewProps {
 export function PatchView({ patch }: PatchViewProps) {
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
   const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    setSelectedModule(null);
+  }, [patch]);
 
   // Calculate canvas bounds from module positions
   const bounds = useMemo(() => {

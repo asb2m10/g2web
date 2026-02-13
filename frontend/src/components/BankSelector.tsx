@@ -66,7 +66,6 @@ export function BankSelector() {
 
   return (
     <div className="space-y-2">
-      <label className="text-sm text-gray-400">Bank</label>
       <select
         value={selectedValue}
         onChange={handleChange}

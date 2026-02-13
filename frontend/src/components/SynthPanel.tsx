@@ -1,7 +1,8 @@
 // Main synth control panel
 
 import { useState } from 'react';
-import { useSynthSettings, useSetMode } from '../hooks/useApi';
+import { useSynthSettings, useSetMode, queryKeys } from '../hooks/useApi';
+import { useQueryClient } from '@tanstack/react-query';
 import { ConnectionStatus } from './ConnectionStatus';
 import { SlotSelector } from './SlotSelector';
 import { VariationSelector } from './VariationSelector';
@@ -9,12 +10,13 @@ import { PatchUpload } from './PatchUpload';
 import { SlotView } from './SlotView';
 import { Keyboard } from './Keyboard';
 import { BankSelector } from './BankSelector';
-import { MidiRouter } from './MidiRouter';
+
 import type { SlotLetter } from '../types/api';
 
 export function SynthPanel() {
-  const { data: settings, isLoading, isError } = useSynthSettings();
+  const { data: settings, isLoading, isError, isFetching } = useSynthSettings();
   const setMode = useSetMode();
+  const queryClient = useQueryClient();
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [loadPatchOpen, setLoadPatchOpen] = useState(false);
 
@@ -118,30 +120,39 @@ export function SynthPanel() {
                   </p>
                 </div>
               </div>
-              <div>
-                <span className="text-gray-500 text-sm">Focus</span>
-                <p className="font-medium text-nord-blue text-xl">
-                  {settings.focus}
-                </p>
+              <div className="flex items-center gap-3">
+                <div>
+                  <span className="text-gray-500 text-sm">Focus</span>
+                  <p className="font-medium text-nord-blue text-xl">
+                    {settings.focus}
+                  </p>
+                </div>
+                <button
+                  onClick={() => { queryClient.invalidateQueries({ queryKey: queryKeys.settings }); queryClient.invalidateQueries({ queryKey: ['api', 'slot'] }); }}
+                  disabled={isFetching}
+                  className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors cursor-pointer disabled:opacity-50"
+                  title="Refresh settings"
+                >
+                  <svg className={`w-5 h-5 ${isFetching ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h5M20 20v-5h-5M4.49 15a8 8 0 0013.02 2.51M19.51 9A8 8 0 006.49 6.49" />
+                  </svg>
+                </button>
               </div>
             </div>
 
-            {/* Bank selector */}
-            <BankSelector />
-
-            {/* Slot selector */}
-            <SlotSelector slots={settings.slots} activeSlot={settings.focus} />
+            {/* Selectors */}
+            <div className="space-y-1">
+              <BankSelector />
+              <SlotSelector slots={settings.slots} activeSlot={settings.focus} />
+              <VariationSelector />
+            </div>
 
             {/* Slot modules */}
             <SlotView slot={settings.focus as SlotLetter} />
-
-            {/* Variation selector */}
-            <VariationSelector />
           </>
         )}
 
-        {/* MIDI Input routing */}
-        <MidiRouter />
+
       </main>
 
       {/* Footer */}

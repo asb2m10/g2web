@@ -23,7 +23,6 @@ export function SlotSelector({ slots, activeSlot }: SlotSelectorProps) {
 
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-semibold text-gray-300">Slots</h2>
       <div className="grid grid-cols-4 gap-3">
         {SLOT_LETTERS.map((letter) => {
           const slot = getSlotInfo(letter);

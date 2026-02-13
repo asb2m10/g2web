@@ -49,10 +49,10 @@ class G2USBInterface:
         data = self.g2h.bulkRead(addr, len, timeout)
         return bytearray([ byte & 0xff for byte in data ])
 
-    def wait_reply(self, timeout=100, cmd=0x00):
-        din = self.read(self.g2iin, 16, timeout)
+    def wait_reply(self, timeout=100, data=None):
+        din = self.bread(self.g2iin, 16, timeout)
         if len(din) == 0:
-            return []
+            return None
 
         # result message first byte:
         #   0xLT 0xDD 0xDD .. 0xDD 0xCC 0xCC (16 0xDD bytes)
@@ -62,58 +62,38 @@ class G2USBInterface:
         s = hexdump(din).replace('\n','\n   ')
         debug('<%d %s\n', self.g2iin & 0x7f, s)
 
-        if din[0] & 0xf == 2: # embedded message
-            dil = din.pop(0)>>4 # length encoded in upper nibble of header byte
-            ecrc = crc(din[:dil-2]) # expected crc
-            acrc = (din[dil-2]<<8)|din[dil-1]  # actual crc
-            if ecrc != acrc:
-                print('bad crc exp: 0x%04x act: 0x%04x', (ecrc, acrc))
-            return din[:dil]
-        if din[0] & 0xf == 1: # extended message
-            sz = (din[1]<<8)|din[2]
-            bin = []
-            retries = 5 # the message has to return within 5 tries
-            while retries != 0 and sz != len(bin):
-                bin = self.bread(self.g2bin, sz)
-                retries -= 1
-            s = hexdump(bin).replace('\n','\n   ')
-            debug('<%d %s\n', self.g2bin & 0x7f, s)
-            if retries == 0:
-                raise Exception('Could not get result')
-            elif bin[0] == CMD_INIT: # special case
-                debug("message pass\n")
-                pass
-            elif bin[1] == cmd[0]: # if result is same as command we got message
-                debug("duplicate message pass\n")
-                pass
-            else:
-                return []
-            ecrc = crc(bin[:-2])            # expected crc
-            acrc = (bin[-2]<<8)|bin[-1]     # actual crc
-            if ecrc != acrc:
-                print('bad crc exp: 0x%04x act: 0x%04x\n', (ecrc, acrc))
-            return bin
+        if is_extended(din):
+            return self.extended_message(din, data)
+        elif is_embedded(din):
+            return self.embedded_message(din, data)
 
         raise UnsupportedMessage('Unsupported message type: 0x%02x' % din[0])
 
     def send_wait_reply(self, data, type=CMD_REQ, timeout=1000):
         # flush any pending input
         try:
-            while self.wait_reply(10) != [] :
+            while self.wait_reply(10) is not None:
                 pass
         except Exception:
             pass
 
         packets = self.format_outbound_message(data, type)
         for packet in packets:
-            self.g2h.bulkWrite(self.g2bout, data)
+            self.write(self.g2bout, packet)
             s = hexdump(packet).replace('\n','\n   ')
             debug('>%d %s\n', self.g2bout & 0x7f, s)
 
         if type != CMD_REQ:
             return ''
 
-        return self.wait_reply(timeout)
+        result = None
+        for retries in range(5):
+            result = self.wait_reply(timeout, data)
+            if result is not None:
+                break
+            print("empty response, retrying...")
+
+        return result
 
     # =======================================================================================================
     # REFACTORING SPACE

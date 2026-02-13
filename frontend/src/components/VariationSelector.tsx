@@ -21,7 +21,6 @@ export function VariationSelector({ initialVariation = 1 }: VariationSelectorPro
 
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-semibold text-gray-300">Variations</h2>
       <div className="grid grid-cols-8 gap-2">
         {VARIATIONS.map((num) => {
           const isActive = currentVariation === num;

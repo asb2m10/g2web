@@ -30,7 +30,7 @@ try:
     def send_message(*args, **kwargs) -> list[int]:
         """Send a message to the G2 and return the response."""
         with semaphore:
-            return g2usb.send_message(*args, **kwargs)
+            return g2usb.send_wait_reply(*args, **kwargs)
     HAS_USB = True
 except Exception:
     traceback.print_exc()
