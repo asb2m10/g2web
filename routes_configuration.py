@@ -9,7 +9,6 @@ from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/api", tags=["Configuration"])
 
-
 class SlotInfo(BaseModel):
     slot: str = Field(..., description="Slot letter (A, B, C, or D)")
     name: str
@@ -105,3 +104,9 @@ async def master_clock_stop() -> Dict[str, Any]:
     perf_version = g2.send_message([g2.CMD_SYS, 0x41, 0x35, 0x04])[5]
     g2.send_message([g2.CMD_SYS, perf_version, 0x3F, 0xFF, 0x00, 0x00])
     return {"status": "ok"}
+
+@router.post("/debug/{enabled}")
+async def set_debug(enabled: bool) -> Dict[str, str]:
+    """Enable or disable debug mode (prints all messages to console)."""
+    g2.g2interface.USB_STREAM_DEBUG = enabled
+    return { "status": "ok", "debug": enabled }

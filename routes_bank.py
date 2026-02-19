@@ -8,7 +8,6 @@ from g2ools.nord.g2.categories import g2categories
 
 router = APIRouter(prefix="/api", tags=["Bank"])
 
-
 class BankDef(BaseModel):
     type: Literal["pch2", "prf2"]
     bank: int

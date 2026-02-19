@@ -30,7 +30,7 @@ export function SynthPanel() {
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
       <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-bold text-nord-blue">G2 Controller</h1>
             {settings && (
@@ -89,7 +89,7 @@ export function SynthPanel() {
       )}
 
       {/* Main content */}
-      <main className="max-w-4xl mx-auto p-6 space-y-8">
+      <main className="max-w-7xl mx-auto p-6 space-y-8">
         {isLoading && (
           <div className="text-center py-12">
             <div className="text-gray-400">Loading synth settings...</div>

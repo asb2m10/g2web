@@ -1,6 +1,6 @@
 // Patch View Component - renders the patch canvas with all modules
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import type { Patch, Module } from '../types/api';
 import { ModuleView, ModuleDetail } from './ModuleView';
 
@@ -11,6 +11,8 @@ interface PatchViewProps {
 export function PatchView({ patch }: PatchViewProps) {
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
   const [scale, setScale] = useState(1);
+  const [canvasScrollTop, setCanvasScrollTop] = useState(0);
+  const canvasRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setSelectedModule(null);
@@ -86,7 +88,11 @@ export function PatchView({ patch }: PatchViewProps) {
       {/* Canvas area */}
       <div className="flex gap-4">
         {/* Module canvas */}
-        <div className="flex-1 bg-gray-800 rounded-lg overflow-auto border border-gray-700">
+        <div
+          ref={canvasRef}
+          className="flex-1 bg-gray-800 rounded-lg overflow-auto border border-gray-700"
+          onScroll={(e) => setCanvasScrollTop((e.target as HTMLDivElement).scrollTop)}
+        >
           <div
             className="relative"
             style={{
@@ -118,9 +124,14 @@ export function PatchView({ patch }: PatchViewProps) {
           </div>
         </div>
 
-        {/* Module detail panel */}
+        {/* Module detail panel — aligned to selected module's vertical position */}
         {selectedModule && (
-          <div className="w-80 flex-shrink-0">
+          <div
+            className="w-80 flex-shrink-0"
+            style={{
+              marginTop: Math.max(0, (selectedModule.pos_y - bounds.minY) * 24 * scale - canvasScrollTop),
+            }}
+          >
             <ModuleDetail
               module={selectedModule}
               activeSlot={patch.slot}

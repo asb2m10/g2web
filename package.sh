@@ -31,7 +31,7 @@ cp "${PROJECT_DIR}/routes_patch.py" "${BUILD_DIR}/"
 cp "${PROJECT_DIR}/routes_bank.py" "${BUILD_DIR}/"
 cp "${PROJECT_DIR}/routes_configuration.py" "${BUILD_DIR}/"
 cp "${PROJECT_DIR}/routes_parameters.py" "${BUILD_DIR}/"
-# Include route_etc.py if it exists
+# Include routes_etc.py if it exists
 [ -f "${PROJECT_DIR}/route_etc.py" ] && cp "${PROJECT_DIR}/route_etc.py" "${BUILD_DIR}/"
 cp "${PROJECT_DIR}/requirements.txt" "${BUILD_DIR}/"
 

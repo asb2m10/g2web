@@ -19,6 +19,7 @@ from routes_patch import router as patch_router
 from routes_bank import router as bank_router
 from routes_configuration import router as configuration_router
 from routes_parameters import router as parameters_router
+from routes_etc import router as etc_router
 
 app = FastAPI(
     title="G2 Synthesizer API",
@@ -55,6 +56,7 @@ app.include_router(patch_router)
 app.include_router(bank_router)
 app.include_router(configuration_router)
 app.include_router(parameters_router)
+app.include_router(etc_router)
 
 @app.post("/api/variation/{variation}", tags=["Variation"])
 async def select_variation(variation: int) -> Dict[str, str]:

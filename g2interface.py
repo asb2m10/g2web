@@ -15,6 +15,8 @@ CMD_REQ  = 0x20
 CMD_SEND = 0x30
 CMD_RESP = 0x00
 
+USB_STREAM_DEBUG = 0
+
 class UnsupportedMessage(Exception):
     def __init__(self, msg: str):
         super().__init__(msg)
@@ -207,7 +209,7 @@ class G2USBInterface:
         return self.g2h.bulkWrite(addr, data)
 
 def debug(fmt, *a):
-    if 1:
+    if USB_STREAM_DEBUG:
         print(fmt % (*a,))
 
 def hexdump(bytes, addr=0, size=1):
