@@ -49,31 +49,14 @@ class Patch(BaseModel):
     activeVariation: int
     allocatedVoice: int
     modules: List[Module]
+    modulesFx: List[Module]
     knobs: List[KnobParameter]
 
 router = APIRouter(prefix="/api", tags=["Patch"])
 
-@router.get("/slot/{slot}")
-async def get_slot_info(slot: str) -> Patch:
-    """Get information about a specific slot (A, B, C, or D)."""
-    g2.require_usb()
-
-    slot_idx = 'abcd'.find(slot.lower())
-    if slot_idx < 0:
-        raise HTTPException(status_code=400, detail="Slot must be A, B, C, or D")
-    with g2.semaphore:
-        version = g2.send_message([g2.CMD_SYS, 0x41, 0x35, slot_idx])[5]
-        data = g2.send_message([g2.CMD_A+slot_idx, version, 0x3c])
-        name = g2.send_message([g2.CMD_A+slot_idx, version, 0x28])
-    name, junk = g2.parse_name(name[4:])
-    #printf("%s\n", hexdump(data[1:-2]))
-    pch2 = Pch2File()
-    data = data[0x03:0x15] + data[0x17:-2]
-    pch2.parse(bytes(data))
-
-    modules : Dict[int, Module] = {}
-
-    for i in pch2.patch.voice.modules:
+def fetch_modules(area) -> Dict[int, Module] :
+    modules = {}
+    for i in area.modules:
         parameters = []
         for p in i.params:
             parameters.append(Parameter(
@@ -94,7 +77,7 @@ async def get_slot_info(slot: str) -> Patch:
             outboundConnections=[]
         )
 
-    for cable in pch2.patch.voice.cables:
+    for cable in area.cables:
         source, dest = cable.source, cable.dest
         outbound = OutboundConnection(
             outModule=source.module.index,
@@ -103,6 +86,26 @@ async def get_slot_info(slot: str) -> Patch:
             color=cable.color
         )
         modules[dest.module.index].outboundConnections.append(outbound)
+
+    return modules
+
+@router.get("/slot/{slot}")
+async def get_slot_info(slot: str) -> Patch:
+    """Get information about a specific slot (A, B, C, or D)."""
+    g2.require_usb()
+
+    slot_idx = 'abcd'.find(slot.lower())
+    if slot_idx < 0:
+        raise HTTPException(status_code=400, detail="Slot must be A, B, C, or D")
+    with g2.semaphore:
+        version = g2.send_message([g2.CMD_SYS, 0x41, 0x35, slot_idx])[5]
+        data = g2.send_message([g2.CMD_A+slot_idx, version, 0x3c])
+        name = g2.send_message([g2.CMD_A+slot_idx, version, 0x28])
+    name, junk = g2.parse_name(name[4:])
+    #printf("%s\n", hexdump(data[1:-2]))
+    pch2 = Pch2File()
+    data = data[0x03:0x15] + data[0x17:-2]
+    pch2.parse(bytes(data))
 
     knobs = []
     if hasattr(pch2.patch, 'knobs'):
@@ -121,7 +124,8 @@ async def get_slot_info(slot: str) -> Patch:
         slot=slot.upper(),
         activeVariation=pch2.patch.description.variation,
         allocatedVoice=pch2.patch.description.voices,
-        modules = modules.values(),
+        modules = fetch_modules(pch2.patch.voice).values(),
+        modulesFx = fetch_modules(pch2.patch.fx).values(),
         knobs = knobs
     )
 

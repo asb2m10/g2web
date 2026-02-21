@@ -1,10 +1,7 @@
 from typing import List, Literal, Dict
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
-
 import g2
-from g2ools.nord.g2.categories import g2categories
 
 router = APIRouter(prefix="/api")
 

@@ -6,9 +6,10 @@ import { ModuleView, ModuleDetail } from './ModuleView';
 
 interface PatchViewProps {
   patch: Patch;
+  compact?: boolean;
 }
 
-export function PatchView({ patch }: PatchViewProps) {
+export function PatchView({ patch, compact = false }: PatchViewProps) {
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
   const [scale, setScale] = useState(1);
   const [canvasScrollTop, setCanvasScrollTop] = useState(0);
@@ -59,9 +60,11 @@ export function PatchView({ patch }: PatchViewProps) {
       {/* Patch header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-white">{patch.name}</h3>
+          {!compact && <h3 className="text-lg font-semibold text-white">{patch.name}</h3>}
           <p className="text-sm text-gray-400">
-            Slot {patch.slot} | Variation {patch.activeVariation + 1} | {patch.modules.length} modules | {patch.allocatedVoice} voices
+            {compact
+              ? `${patch.modules.length} modules`
+              : `Slot ${patch.slot} | Variation ${patch.activeVariation + 1} | ${patch.modules.length} modules | ${patch.allocatedVoice} voices`}
           </p>
         </div>
 

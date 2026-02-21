@@ -1,5 +1,30 @@
 # Clavia Nord G2 Modular Editor
-A web interface to the Clavia Nord Modular G2. Specifically designed to be used with RaspberryPI W or Norms. 
+A web interface to the Clavia Nord Modular G2. Specifically designed to be used with 
+RaspberryPI W or Norms. You can not edit patches for now but at least you can change
+the parameters and load banks. 
+
+I got tired to see my G2 on the shelf and not being able to use it because of the dated
+software with USB compatibility.
+
+Python is used for the backend to communicate with the G2 using FastAPI, see [openapi contract](frontend/public/openapi.html) for the API documentation. The frontend is built with React and Vite.
+
+![Screenshot](frontend/public/screenshot.jpg)
+
+Note that the modules that are displayed are static images, they are used as reference for the patch.
+
+This is still a work in progress.
+
+# TODO
+- [X] Loading patches from bank
+- [X] Loading patches from files
+- [X] Changing parameters on modules
+- [X] Switch from performance mode to patch mode
+- [ ] Fix some modules images cropping
+- [ ] Assign MIDI CC to parameters
+- [ ] Set patch parameters (voice allocation, clock source, midi range)
+- [ ] Knob assignments
+- [ ] Saving patches on banks
+- [ ] Editing patches
 
 # Installation
 ## Python requirements

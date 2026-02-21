@@ -53,6 +53,7 @@ export interface Patch {
   activeVariation: number;
   allocatedVoice: number;
   modules: Module[];
+  modulesFx: Module[];
 }
 
 export interface BankDef {

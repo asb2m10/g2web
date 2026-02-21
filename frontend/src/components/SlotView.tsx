@@ -49,5 +49,20 @@ export function SlotView({ slot }: SlotViewProps) {
     );
   }
 
-  return <PatchView patch={patch} />;
+  const patchFx = { ...patch, modules: patch.modulesFx };
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h4 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">Voice Area</h4>
+        <PatchView patch={patch} />
+      </div>
+      {patch.modulesFx.length > 0 && (
+        <div>
+          <h4 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">FX Area</h4>
+          <PatchView patch={patchFx} compact />
+        </div>
+      )}
+    </div>
+  );
 }

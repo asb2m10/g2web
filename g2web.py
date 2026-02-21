@@ -13,6 +13,7 @@ import logging
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, FileResponse
+from starlette.staticfiles import StaticFiles
 
 import g2
 from routes_patch import router as patch_router
@@ -87,18 +88,18 @@ async def select_mode(mode: ModeType = Path("Switch to performance or patch mode
     return {"status": "ok"}
 
 # ============== Static Files (Frontend) ==============
-# STATIC_DIR = Path(__file__).parent / "frontend" / "dist"
-# if STATIC_DIR.exists():
-#     # Serve static assets (js, css, images)
-#     app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
-#
-#     @app.get("/{path:path}", tags=["static"])
-#     async def serve_frontend(path: str):
-#         """Serve frontend SPA - returns index.html for all non-API routes."""
-#         file_path = STATIC_DIR / path
-#         if file_path.exists() and file_path.is_file():
-#             return FileResponse(file_path)
-#         return FileResponse(STATIC_DIR / "index.html")
+STATIC_DIR = Path(__file__).parent / "frontend" / "dist"
+if STATIC_DIR.exists():
+    # Serve static assets (js, css, images)
+    app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
+
+    @app.get("/{path:path}", tags=["static"])
+    async def serve_frontend(path: str):
+        """Serve frontend SPA - returns index.html for all non-API routes."""
+        file_path = STATIC_DIR / path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(file_path)
+        return FileResponse(STATIC_DIR / "index.html")
 
 
 def register_mdns(port: int = 8000):
