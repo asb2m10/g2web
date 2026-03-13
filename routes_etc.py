@@ -24,3 +24,19 @@ async def remove_note(midi_note: int) -> Dict[str, str]:
         raise HTTPException(status_code=400, detail="MIDI note must be between 0 and 127")
     resp = g2.send_message([g2.CMD_SYS, 0x41, 0x56, 1, midi_note])
     return { "status": "ok" }
+
+@router.post("/api/variation/{variation}", tags=["Variation"])
+async def select_variation(variation: int) -> Dict[str, str]:
+    """Select variation (1-8)."""
+    g2.require_usb()
+
+    if variation < 1 or variation > 8:
+        raise HTTPException(status_code=400, detail="Variation must be 1-8")
+
+    try:
+        with g2.semaphore:
+            slota = g2.send_message([g2.CMD_SYS, 0x41, 0x35, 0x00])
+            g2.send_message([g2.CMD_A, slota[5], 0x6a, variation-1])
+        return {"status": "ok"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error selecting variation: {str(e)}")
