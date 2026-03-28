@@ -69,3 +69,78 @@ async def set_parameter(
         response["variation"] = variation
 
     return response
+
+@router.put("/parametercc/{slot}/{location}/{module}/{parameter}/{cc}", tags=["Parameters"])
+async def set_parametercc(
+        slot: str,
+        location: str,
+        module: int,
+        parameter: int,
+        cc: int
+) -> Dict[str, Any]:
+    """Set a parameter value on a specific module."""
+    g2.require_usb()
+
+    slot_idx = 'abcd'.find(slot.lower())
+    if slot_idx < 0:
+        raise HTTPException(status_code=400, detail="Slot must be one of A, B, C, D")
+
+    loc_map = {'FX':0, 'VA':1, 'PATCH':2}
+    loc_idx = loc_map.get(location.upper())
+    if loc_idx is None:
+        raise HTTPException(status_code=400, detail="Location must be FX, VA, or PATCH")
+
+    if module < 0 or module > 255:
+        raise HTTPException(status_code=400, detail="Module must be 0-255")
+    if parameter < 0 or parameter > 255:
+        raise HTTPException(status_code=400, detail="Parameter must be 0-255")
+    if cc < 0 or cc > 255:
+        raise HTTPException(status_code=400, detail="CC must be 0-255")
+
+    # Get current slot version
+    slot_version = g2.send_message([g2.CMD_SYS, 0x41, 0x35, slot_idx])[5]
+
+    # Set the parameter value
+    g2.send_message(
+        [ g2.CMD_A + slot_idx,
+          slot_version,
+          0x22,    # S_ASSIGN_MIDICC
+          loc_idx,
+          module,
+          parameter,
+          cc ])
+
+    response = {
+        "status": "ok",
+        "location": location.upper(),
+        "module": module,
+        "parameter": parameter,
+        "cc": cc
+    }
+
+    return response
+
+@router.delete("/parametercc/{slot}/{cc}", tags=["Parameters"])
+async def delete_parametercc(
+        slot: str,
+        cc: int
+) -> Dict[str, Any]:
+    """Deassign a MIDI CC from a parameter."""
+    g2.require_usb()
+
+    slot_idx = 'abcd'.find(slot.lower())
+    if slot_idx < 0:
+        raise HTTPException(status_code=400, detail="Slot must be one of A, B, C, D")
+
+    if cc < 0 or cc > 255:
+        raise HTTPException(status_code=400, detail="CC must be 0-255")
+
+    slot_version = g2.send_message([g2.CMD_SYS, 0x41, 0x35, slot_idx])[5]
+
+    g2.send_message(
+        [ g2.CMD_A + slot_idx,
+          slot_version,
+          0x23,    # S_DEASSIGN_MIDICC
+          cc ])
+
+    return {"status": "ok", "cc": cc}

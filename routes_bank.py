@@ -72,3 +72,18 @@ async def select_bank_item(slot: str, bank: int, patch: int) -> Dict[str, str]:
 
     g2.send_message([g2.CMD_SYS, 0x41, 0x0a, slot, bank-1, patch-1])
     return {"status": "ok"}
+
+@router.put("/bank/{slot}/{bank}/{patch}")
+async def save_bank_item(slot: str, bank: int, patch: int) -> Dict[str, str]:
+    """Put current patch into a bank item by type and ID."""
+
+    slot = 'abcdp'.find(slot.lower())
+    if slot < 0:
+        raise HTTPException(status_code=400, detail="Slot must be one of A, B, C, D, P")
+    if bank < 1 or bank > 32:
+        raise HTTPException(status_code=400, detail="Bank must be between 1 and 32")
+    if patch < 1 or patch > 127:
+        raise HTTPException(status_code=400, detail="Bank must be between 1 and 32")
+
+    g2.send_message([g2.CMD_SYS, 0x41, 0x0b, slot, bank-1, patch-1])
+    return {"status": "ok"}
