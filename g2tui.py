@@ -340,7 +340,7 @@ class G2TUI(App):
 
         try:
             if result == "unassign":
-                await delete_parametercc("a", item.module.instance)
+                await delete_parametercc("a", "VA", item.module.instance, item.param_idx)
                 self.notify(f"CC unassigned from {param_name}")
             else:
                 await set_parametercc("a", "VA", item.module.instance, item.param_idx, result)

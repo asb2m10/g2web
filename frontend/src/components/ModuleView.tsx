@@ -312,7 +312,7 @@ function ParameterDisplay({
             <div className="flex gap-2 justify-between">
               <button
                 onClick={() => {
-                  deleteParameterCC.mutate({ slot, module: moduleInstance });
+                  deleteParameterCC.mutate({ slot, location, module: moduleInstance, parameter: paramIndex });
                   setCcDialogOpen(false);
                 }}
                 className="text-xs text-red-400 hover:text-red-300 px-3 py-1 rounded border border-red-800 hover:border-red-600"

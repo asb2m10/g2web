@@ -138,10 +138,12 @@ export async function selectPatch(slot: string, bank: number, patch: number): Pr
 
 export async function deleteParameterCC(
   slot: SlotLetter,
-  module: number
+  location: string,
+  module: number,
+  parameter: number
 ): Promise<ApiResponse> {
   const response = await fetch(
-    `${API_BASE}/parametercc/${slot}/${module}`,
+    `${API_BASE}/parametercc/${slot}/${location}/${module}/${parameter}`,
     { method: 'DELETE' }
   );
   if (!response.ok) {

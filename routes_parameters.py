@@ -5,6 +5,8 @@ from fastapi import APIRouter, HTTPException
 
 import g2
 
+from g2ools.nord.g2.file import Pch2File
+
 router = APIRouter(prefix="/api", tags=["Parameters"])
 
 @router.post("/parameter/{slot}/{location}/{module}/{parameter}/{value}/{variation}", tags=["Parameters"])
@@ -120,10 +122,12 @@ async def set_parametercc(
 
     return response
 
-@router.delete("/parametercc/{slot}/{module}", tags=["Parameters"])
+@router.delete("/parametercc/{slot}/{location}/{module}/{parameter}", tags=["Parameters"])
 async def delete_parametercc(
         slot: str,
-        module: int
+        location: str,
+        module: int,
+        parameter: int
 ) -> Dict[str, Any]:
     """Deassign a MIDI CC from a parameter."""
     g2.require_usb()
@@ -132,12 +136,49 @@ async def delete_parametercc(
     if slot_idx < 0:
         raise HTTPException(status_code=400, detail="Slot must be one of A, B, C, D")
 
+    assignments = await get_parametercc(slot)
+    match = next((a for a in assignments
+                  if a['location'] == location.upper()
+                  and a['module'] == module
+                  and a['parameter'] == parameter), None)
+    if match is None:
+        raise HTTPException(status_code=404, detail="No MIDI CC assigned to this parameter")
+
     slot_version = g2.send_message([g2.CMD_SYS, 0x41, 0x35, slot_idx])[5]
 
     g2.send_message(
         [ g2.CMD_A + slot_idx,
           slot_version,
           0x23,    # S_DEASSIGN_MIDICC
-          module ])
+          match['cc'] ])
 
-    return {"status": "ok", "module": module}
+    return {"status": "ok", "cc": match['cc']}
+
+@router.get("/parametercc/{slot}", tags=["Parameters"])
+async def get_parametercc(slot: str) -> list:
+    """Get all MIDI CC assignments for a slot."""
+    g2.require_usb()
+
+    slot_idx = 'abcd'.find(slot.lower())
+    if slot_idx < 0:
+        raise HTTPException(status_code=400, detail="Slot must be one of A, B, C, D")
+
+    # S_CTRL_SNAPSHOT with C_CONTROLLERS could be used for more efficient retrieval
+    with g2.semaphore:
+        version = g2.send_message([g2.CMD_SYS, 0x41, 0x35, slot_idx])[5]
+        data = g2.send_message([g2.CMD_A + slot_idx, version, 0x3c])
+
+    pch2 = Pch2File()
+    pch2.parse(bytes(data[0x03:0x15] + data[0x17:-2]))
+
+    loc_map = {0: 'FX', 1: 'VA', 2: 'PATCH'}
+    result = []
+    for ctrl in getattr(pch2.patch, 'ctrls', []):
+        param = ctrl.param
+        result.append({
+            'cc':        ctrl.midicc,
+            'location':  loc_map.get(param.module.area.index, param.module.area.index),
+            'module':    param.module.index,
+            'parameter': param.index,
+        })
+    return result

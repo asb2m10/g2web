@@ -119,8 +119,8 @@ export function useSetParameterCC() {
 // Delete parameter MIDI CC mutation
 export function useDeleteParameterCC() {
   return useMutation({
-    mutationFn: ({ slot, module }: { slot: SlotLetter; module: number }) =>
-      deleteParameterCC(slot, module),
+    mutationFn: ({ slot, location, module, parameter }: { slot: SlotLetter; location: string; module: number; parameter: number }) =>
+      deleteParameterCC(slot, location, module, parameter),
   });
 }
 
