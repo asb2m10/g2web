@@ -20,10 +20,10 @@ This is still a work in progress.
 - [X] Changing parameters on modules
 - [X] Switch from performance mode to patch mode
 - [ ] Fix some modules images cropping
-- [ ] Assign MIDI CC to parameters
+- [X] Assign MIDI CC to parameters
 - [ ] Set patch parameters (voice allocation, clock source, midi range)
 - [ ] Knob assignments
-- [ ] Saving patches on banks
+- [X] Saving patches on banks
 - [ ] Editing patches
 
 # Installation

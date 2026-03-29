@@ -1,13 +1,14 @@
 from textual.app import App, ComposeResult
-from textual.widgets import Footer, Header, Select, Label, Button, ListView, ListItem
+from textual.widgets import Footer, Header, Select, Label, Button, ListView, ListItem, Input
 from textual.containers import Vertical, Horizontal
 from textual import work
 from textual.events import Key
+from textual.screen import ModalScreen
 
-from routes_bank import get_bank, select_bank_item
+from routes_bank import get_bank, select_bank_item, save_bank_item
 from routes_etc import select_variation, play_note, remove_note
 from routes_patch import get_slot_info, Module
-from routes_parameters import set_parameter
+from routes_parameters import set_parameter, set_parametercc, delete_parametercc
 from g2ools.nord.g2.modules import idmap as module_idmap
 
 # Computer keyboard piano: a s d f g h j  →  C D E F G A B  (middle octave)
@@ -55,12 +56,126 @@ class ParamItem(ListItem):
         self.query_one("#param-label", Label).update(f"{name}: {display}")
 
 
+class SaveBankDialog(ModalScreen[tuple[int, int] | None]):
+    """Dialog to choose bank and patch destination for saving."""
+
+    BINDINGS = [("escape", "dismiss(None)", "Cancel")]
+
+    def __init__(self, bank: int, patch: int) -> None:
+        super().__init__()
+        self._bank = bank
+        self._patch = patch
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="cc-dialog"):
+            yield Label("Save to bank destination")
+            with Horizontal():
+                yield Label("Bank (1-32): ", classes="save-label")
+                yield Input(str(self._bank), id="save-bank", type="integer")
+            with Horizontal():
+                yield Label("Patch (1-127): ", classes="save-label")
+                yield Input(str(self._patch), id="save-patch", type="integer")
+            with Horizontal(id="cc-buttons"):
+                yield Button("Save", id="save-confirm", variant="primary")
+                yield Button("Cancel", id="save-cancel")
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "save-cancel":
+            self.dismiss(None)
+        elif event.button.id == "save-confirm":
+            self._submit()
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        self._submit()
+
+    def _submit(self) -> None:
+        try:
+            bank = int(self.query_one("#save-bank", Input).value)
+            patch = int(self.query_one("#save-patch", Input).value)
+        except ValueError:
+            return
+        bank_ok = 1 <= bank <= 32
+        patch_ok = 1 <= patch <= 127
+        self.query_one("#save-bank", Input).set_class(not bank_ok, "error")
+        self.query_one("#save-patch", Input).set_class(not patch_ok, "error")
+        if bank_ok and patch_ok:
+            self.dismiss((bank, patch))
+
+
+class MidiCCDialog(ModalScreen[int | str | None]):
+    """Dialog to assign or unassign a MIDI CC number to a parameter."""
+
+    BINDINGS = [("escape", "dismiss(None)", "Cancel")]
+
+    def __init__(self, param_name: str) -> None:
+        super().__init__()
+        self._param_name = param_name
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="cc-dialog"):
+            yield Label(f"Assign MIDI CC to: {self._param_name}")
+            yield Input(placeholder="CC number (0-127)", id="cc-input", type="integer")
+            with Horizontal(id="cc-buttons"):
+                yield Button("Assign", id="cc-assign", variant="primary")
+                yield Button("Unassign", id="cc-unassign", variant="warning")
+                yield Button("Cancel", id="cc-cancel")
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "cc-cancel":
+            self.dismiss(None)
+        elif event.button.id == "cc-unassign":
+            self.dismiss("unassign")
+        elif event.button.id == "cc-assign":
+            self._submit()
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        self._submit()
+
+    def _submit(self) -> None:
+        value = self.query_one("#cc-input", Input).value.strip()
+        try:
+            cc = int(value)
+            if 0 <= cc <= 127:
+                self.dismiss(cc)
+            else:
+                self.query_one("#cc-input", Input).add_class("error")
+        except ValueError:
+            self.query_one("#cc-input", Input).add_class("error")
+
+
 class G2TUI(App):
     """G2 Terminal Application Editor"""
+
+    CSS = """
+    MidiCCDialog {
+        align: center middle;
+    }
+    #cc-dialog {
+        padding: 1 2;
+        width: 70;
+        height: auto;
+        border: thick $primary;
+        background: $surface;
+    }
+    #cc-buttons {
+        height: auto;
+        margin-top: 1;
+        align: right middle;
+    }
+    #cc-buttons Button {
+        margin-left: 1;
+    }
+    .save-label {
+        width: 16;
+        content-align: right middle;
+        padding-top: 1;
+    }
+    """
 
     BINDINGS = [
         ("left", "adjust_param(-1)", "Decrease param"),
         ("right", "adjust_param(1)", "Increase param"),
+        ("s", "save_bank", "Save bank"),
         ("q", "quit", "Quit"),
     ]
 
@@ -170,6 +285,8 @@ class G2TUI(App):
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         if event.list_view.id == "module-list" and isinstance(event.item, ModuleItem):
             self._refresh_params(event.item.module)
+        elif event.list_view.id == "param-list" and isinstance(event.item, ParamItem):
+            self._open_assign_cc(event.item)
 
     @work
     async def on_button_pressed(self, event: Button.Pressed) -> None:
@@ -213,6 +330,44 @@ class G2TUI(App):
 
         param.values[self.current_variation - 1] = new_value
         item.update_label(self.current_variation)
+
+    @work
+    async def _open_assign_cc(self, item: ParamItem) -> None:
+        param_name = item.module.parameters[item.param_idx].name
+        result = await self.app.push_screen_wait(MidiCCDialog(param_name))
+        if result is None:
+            return
+
+        try:
+            if result == "unassign":
+                await delete_parametercc("a", item.module.instance)
+                self.notify(f"CC unassigned from {param_name}")
+            else:
+                await set_parametercc("a", "VA", item.module.instance, item.param_idx, result)
+                self.notify(f"CC {result} assigned to {param_name}")
+        except Exception as e:
+            self.notify(f"Error: {e}", severity="error")
+
+    @work
+    async def action_save_bank(self) -> None:
+        select = self.query_one("#bank_select", Select)
+        value = select.value
+        if isinstance(value, str) and ":" in value:
+            _, bank_str, patch_str = value.split(":")
+            default_bank, default_patch = int(bank_str), int(patch_str)
+        else:
+            default_bank, default_patch = 1, 1
+
+        result = await self.app.push_screen_wait(SaveBankDialog(default_bank, default_patch))
+        if result is None:
+            return
+
+        bank, patch = result
+        try:
+            await save_bank_item("a", bank, patch)
+            self.notify(f"Saved to bank {bank} patch {patch}")
+        except Exception as e:
+            self.notify(f"Save error: {e}", severity="error")
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
