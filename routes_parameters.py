@@ -120,10 +120,10 @@ async def set_parametercc(
 
     return response
 
-@router.delete("/parametercc/{slot}/{cc}", tags=["Parameters"])
+@router.delete("/parametercc/{slot}/{module}", tags=["Parameters"])
 async def delete_parametercc(
         slot: str,
-        cc: int
+        module: int
 ) -> Dict[str, Any]:
     """Deassign a MIDI CC from a parameter."""
     g2.require_usb()
@@ -132,15 +132,12 @@ async def delete_parametercc(
     if slot_idx < 0:
         raise HTTPException(status_code=400, detail="Slot must be one of A, B, C, D")
 
-    if cc < 0 or cc > 255:
-        raise HTTPException(status_code=400, detail="CC must be 0-255")
-
     slot_version = g2.send_message([g2.CMD_SYS, 0x41, 0x35, slot_idx])[5]
 
     g2.send_message(
         [ g2.CMD_A + slot_idx,
           slot_version,
           0x23,    # S_DEASSIGN_MIDICC
-          cc ])
+          module ])
 
-    return {"status": "ok", "cc": cc}
+    return {"status": "ok", "module": module}

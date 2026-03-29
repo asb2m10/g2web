@@ -49,7 +49,7 @@ export interface Module {
 
 export interface Patch {
   name: string;
-  slot: string;
+  slot: SlotLetter;
   activeVariation: number;
   allocatedVoice: number;
   modules: Module[];

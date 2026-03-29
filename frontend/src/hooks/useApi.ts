@@ -8,10 +8,13 @@ import {
   loadPatch,
   setVariation,
   setParameter,
+  setParameterCC,
+  deleteParameterCC,
   getSlotInfo,
   setMode,
   selectPerformance,
   selectPatch,
+  savePatch,
 } from '../lib/api';
 import type { SlotLetter, Variation } from '../types/api';
 
@@ -94,6 +97,33 @@ export function useSetParameter() {
   });
 }
 
+// Set parameter MIDI CC mutation
+export function useSetParameterCC() {
+  return useMutation({
+    mutationFn: ({
+      slot,
+      location,
+      module,
+      parameter,
+      cc,
+    }: {
+      slot: SlotLetter;
+      location: 'FX' | 'VA' | 'PATCH';
+      module: number;
+      parameter: number;
+      cc: number;
+    }) => setParameterCC(slot, location, module, parameter, cc),
+  });
+}
+
+// Delete parameter MIDI CC mutation
+export function useDeleteParameterCC() {
+  return useMutation({
+    mutationFn: ({ slot, module }: { slot: SlotLetter; module: number }) =>
+      deleteParameterCC(slot, module),
+  });
+}
+
 // Slot info query
 export function useSlotInfo(slot: SlotLetter | null) {
   return useQuery({
@@ -127,6 +157,14 @@ export function useSelectPerformance() {
       queryClient.invalidateQueries({ queryKey: queryKeys.settings });
       queryClient.invalidateQueries({ queryKey: ['api', 'slot'] });
     },
+  });
+}
+
+// Save patch to bank mutation
+export function useSavePatch() {
+  return useMutation({
+    mutationFn: ({ slot, bank, patch }: { slot: string; bank: number; patch: number }) =>
+      savePatch(slot, bank, patch),
   });
 }
 

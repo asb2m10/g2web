@@ -1,10 +1,10 @@
 // Module View Component - renders a single G2 module
 
-import { useState } from 'react';
-import type { Module, Parameter } from '../types/api';
+import { useState, useRef } from 'react';
+import type { Module, Parameter, SlotLetter } from '../types/api';
 import { getModuleById, ConnColor } from '../types/modules';
 import { paramMap } from '../types/params';
-import { useSetParameter } from '../hooks/useApi';
+import { useSetParameter, useSetParameterCC, useDeleteParameterCC } from '../hooks/useApi';
 
 // PNG images for each module type (served from /public/modules/)
 const MODULE_IMAGES: Record<number, string> = {
@@ -198,6 +198,9 @@ interface ParameterDisplayProps {
   paramDef: typeof paramMap[string] | undefined;
   paramIndex: number;
   activeVariation: number;
+  slot: SlotLetter;
+  location: 'FX' | 'VA' | 'PATCH';
+  moduleInstance: number;
   onValueChange: (paramIndex: number, value: number) => void;
 }
 
@@ -206,9 +209,18 @@ function ParameterDisplay({
   paramDef,
   paramIndex,
   activeVariation,
+  slot,
+  location,
+  moduleInstance,
   onValueChange,
 }: ParameterDisplayProps) {
   const [localValue, setLocalValue] = useState<number | null>(null);
+  const [ccDialogOpen, setCcDialogOpen] = useState(false);
+  const [ccInput, setCcInput] = useState('');
+  const ccInputRef = useRef<HTMLInputElement>(null);
+  const setParameterCC = useSetParameterCC();
+  const deleteParameterCC = useDeleteParameterCC();
+
   const value = localValue ?? param.values[activeVariation] ?? param.values[0] ?? 0;
 
   // Get display value from param definition
@@ -227,31 +239,105 @@ function ParameterDisplay({
   const min = paramDef?.low ?? 0;
   const max = paramDef?.high ?? 127;
 
+  const handleDoubleClick = () => {
+    setCcInput('');
+    setCcDialogOpen(true);
+    setTimeout(() => ccInputRef.current?.focus(), 0);
+  };
+
+  const handleCcConfirm = () => {
+    const cc = parseInt(ccInput);
+    if (!isNaN(cc) && cc >= 0 && cc <= 127) {
+      setParameterCC.mutate({ slot, location, module: moduleInstance, parameter: paramIndex, cc });
+    }
+    setCcDialogOpen(false);
+  }; 
+
+  const handleCcKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleCcConfirm();
+    if (e.key === 'Escape') setCcDialogOpen(false);
+  };
+
   return (
-    <div className="flex items-center gap-2 text-xs">
-      <span className="text-gray-400 w-20 truncate" title={param.name}>
-        {param.name}
-      </span>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        value={value}
-        onChange={(e) => { const v = parseInt(e.target.value); setLocalValue(v); onValueChange(paramIndex, v); }}
-        onMouseUp={() => setLocalValue(null)}
-        onTouchEnd={() => setLocalValue(null)}
-        className="flex-1 h-1.5 bg-gray-700 rounded-full appearance-none cursor-pointer
-          [&::-webkit-slider-thumb]:appearance-none
-          [&::-webkit-slider-thumb]:w-3
-          [&::-webkit-slider-thumb]:h-3
-          [&::-webkit-slider-thumb]:rounded-full
-          [&::-webkit-slider-thumb]:bg-nord-blue
-          [&::-webkit-slider-thumb]:cursor-pointer"
-      />
-      <span className="text-gray-300 w-12 text-right truncate" title={displayValue}>
-        {displayValue}
-      </span>
-    </div>
+    <>
+      <div className="flex items-center gap-2 text-xs">
+        <span
+          className="text-gray-400 w-20 truncate cursor-pointer select-none"
+          title={`${param.name} (double-click to assign MIDI CC)`}
+          onDoubleClick={handleDoubleClick}
+        >
+          {param.name}
+        </span>
+        <input
+          type="range"
+          min={min}
+          max={max}
+          value={value}
+          onChange={(e) => { const v = parseInt(e.target.value); setLocalValue(v); onValueChange(paramIndex, v); }}
+          onMouseUp={() => setLocalValue(null)}
+          onTouchEnd={() => setLocalValue(null)}
+          className="flex-1 h-1.5 bg-gray-700 rounded-full appearance-none cursor-pointer
+            [&::-webkit-slider-thumb]:appearance-none
+            [&::-webkit-slider-thumb]:w-3
+            [&::-webkit-slider-thumb]:h-3
+            [&::-webkit-slider-thumb]:rounded-full
+            [&::-webkit-slider-thumb]:bg-nord-blue
+            [&::-webkit-slider-thumb]:cursor-pointer"
+        />
+        <span className="text-gray-300 w-12 text-right truncate" title={displayValue}>
+          {displayValue}
+        </span>
+      </div>
+
+      {ccDialogOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+          onClick={(e) => { if (e.target === e.currentTarget) setCcDialogOpen(false); }}
+        >
+          <div className="bg-gray-800 border border-gray-600 rounded-lg p-4 shadow-xl w-64">
+            <h4 className="text-white text-sm font-semibold mb-1">Assign MIDI CC</h4>
+            <p className="text-gray-400 text-xs mb-3 truncate">{param.name}</p>
+            <input
+              ref={ccInputRef}
+              type="number"
+              min={0}
+              max={127}
+              value={ccInput}
+              onChange={(e) => setCcInput(e.target.value)}
+              onKeyDown={handleCcKeyDown}
+              placeholder="CC number (0–127)"
+              className="w-full bg-gray-700 text-white text-sm rounded px-2 py-1.5 mb-3
+                border border-gray-600 focus:outline-none focus:border-nord-blue"
+            />
+            <div className="flex gap-2 justify-between">
+              <button
+                onClick={() => {
+                  deleteParameterCC.mutate({ slot, module: moduleInstance });
+                  setCcDialogOpen(false);
+                }}
+                className="text-xs text-red-400 hover:text-red-300 px-3 py-1 rounded border border-red-800 hover:border-red-600"
+              >
+                Unassign
+              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCcDialogOpen(false)}
+                  className="text-xs text-gray-400 hover:text-white px-3 py-1 rounded border border-gray-600 hover:border-gray-400"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCcConfirm}
+                  className="text-xs text-white bg-nord-blue hover:brightness-110 px-3 py-1 rounded"
+                >
+                  Assign
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -333,7 +419,7 @@ export function ModuleView({ module, scale = 1, onClick, selected }: ModuleViewP
 // Expanded module panel for showing parameters
 interface ModuleDetailProps {
   module: Module;
-  activeSlot: number;
+  activeSlot: SlotLetter;
   activeVariation: number;
   onClose: () => void;
 }
@@ -394,6 +480,9 @@ export function ModuleDetail({ module, activeSlot, activeVariation, onClose }: M
                 paramDef={paramDef}
                 paramIndex={idx}
                 activeVariation={activeVariation}
+                slot={activeSlot}
+                location="VA"
+                moduleInstance={module.instance}
                 onValueChange={handleParameterChange}
               />
             );

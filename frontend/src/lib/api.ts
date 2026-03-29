@@ -116,12 +116,53 @@ export async function selectPerformance(bank: number, patch: number): Promise<Ap
   return response.json();
 }
 
+export async function savePatch(slot: string, bank: number, patch: number): Promise<ApiResponse> {
+  const response = await fetch(`${API_BASE}/bank/${slot}/${bank}/${patch}`, {
+    method: 'PUT',
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to save patch: ${response.statusText}`);
+  }
+  return response.json();
+}
+
 export async function selectPatch(slot: string, bank: number, patch: number): Promise<ApiResponse> {
   const response = await fetch(`${API_BASE}/bank/${slot}/${bank}/${patch}`, {
     method: 'POST',
   });
   if (!response.ok) {
     throw new Error(`Failed to select patch: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function deleteParameterCC(
+  slot: SlotLetter,
+  module: number
+): Promise<ApiResponse> {
+  const response = await fetch(
+    `${API_BASE}/parametercc/${slot}/${module}`,
+    { method: 'DELETE' }
+  );
+  if (!response.ok) {
+    throw new Error(`Failed to delete parameter CC: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function setParameterCC(
+  slot: SlotLetter,
+  location: 'FX' | 'VA' | 'PATCH',
+  module: number,
+  parameter: number,
+  cc: number
+): Promise<ApiResponse> {
+  const response = await fetch(
+    `${API_BASE}/parametercc/${slot}/${location}/${module}/${parameter}/${cc}`,
+    { method: 'PUT' }
+  );
+  if (!response.ok) {
+    throw new Error(`Failed to set parameter CC: ${response.statusText}`);
   }
   return response.json();
 }
