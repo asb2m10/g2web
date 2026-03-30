@@ -163,7 +163,6 @@ async def get_parametercc(slot: str) -> list:
     if slot_idx < 0:
         raise HTTPException(status_code=400, detail="Slot must be one of A, B, C, D")
 
-    # S_CTRL_SNAPSHOT with C_CONTROLLERS could be used for more efficient retrieval
     with g2.semaphore:
         version = g2.send_message([g2.CMD_SYS, 0x41, 0x35, slot_idx])[5]
         data = g2.send_message([g2.CMD_A + slot_idx, version, 0x3c])

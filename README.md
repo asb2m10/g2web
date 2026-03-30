@@ -1,7 +1,7 @@
 # Clavia Nord G2 Modular Editor
-A web interface to the Clavia Nord Modular G2. Specifically designed to be used with 
+A web interface to the Clavia Nord Modular G2. Specifically designed to be used with
 RaspberryPI W or Norms. You can not edit patches for now but at least you can change
-the parameters and load banks. 
+the parameters and load banks.
 
 I got tired to see my G2 on the shelf and not being able to use it because of the dated
 software with USB compatibility.
@@ -32,15 +32,15 @@ Be sure to install the python requirements (`pip install -r requirements.txt`) a
 server with `python g2web.py`. The server will be available at `http://localhost:5000`.
 
 ## USB requirements
-This project uses the [pyusb](https://github.com/pyusb/pyusb) library to communicate with the G2 by using 
-[libusb](https://libusb.info/) that can be used in user mode. 
+This project uses the [pyusb](https://github.com/pyusb/pyusb) library to communicate with the G2 by using
+[libusb](https://libusb.info/) that can be used in user mode.
 
-On Debian-based Linux distributions, you can install it with 
-`sudo apt-get install libusb-1.0-0-dev`. On macOS, you can install it with 
+On Debian-based Linux distributions, you can install it with
+`sudo apt-get install libusb-1.0-0-dev`. On macOS, you can install it with
 Homebrew using `brew install libusb`.
 
 ### Linux USB permission
-If you have permission denied errors when trying to access the G2, you may need to create a udev rule to give your user 
+If you have permission denied errors when trying to access the G2, you may need to create a udev rule to give your user
 permission to access the device. Create a file named `/etc/udev/rules.d/50-g2-nord.rules`
 
 ```
@@ -63,5 +63,5 @@ at `http://localhost:5173`
   - Website: https://www.bverhue.nl/g2dev/
   - Detailed protocol: https://www.bverhue.nl/G2EditorHelp/G2_messages.html
 - Java: https://github.com/sirlensalot/g2fx
-- Documentation: 
+- Documentation:
   - PCH2 File Format: http://dewb.org/g2/pch2format.html

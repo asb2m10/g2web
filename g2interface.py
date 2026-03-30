@@ -200,7 +200,6 @@ class G2USBInterface:
             data = self.g2h.bulkRead(addr, len, timeout) # self.g2bin
             return bytearray([ byte & 0xff for byte in data ])
         except USBTimeoutError as e :
-            print("timeout")
             return []
 
     def read(self, addr, len, timeout=100):
